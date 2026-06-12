@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RiverWatch — 서울 하천 생태 대시보드</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Pretendard', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a1a 100%);
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header h1 span { color: #7873f5; }
+    .status-bar {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+    }
+    .status-bar .badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .badge.danger { background: #e74c3c22; color: #e74c3c; border: 1px solid #e74c3c44; }
+    .badge.warning { background: #f39c1222; color: #f39c12; border: 1px solid #f39c1244; }
+    .badge.safe { background: #2ecc7122; color: #2ecc71; border: 1px solid #2ecc7144; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #12121a;
+      border: 1px solid #222;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid #222;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-body { padding: 0; }
+    #map { height: 380px; width: 100%; }
+    #chart-container { padding: 1rem; height: 380px; }
+
+    .species-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.8rem;
+      padding: 1rem;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .species-card {
+      background: #1a1a28;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #2a2a3a;
+      transition: border-color 0.2s;
+    }
+    .species-card:hover { border-color: #7873f5; }
+    .species-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      background: #222;
+    }
+    .species-card .info {
+      padding: 0.6rem;
+    }
+    .species-card .name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-style: italic;
+      color: #b8b0ff;
+    }
+    .species-card .common {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 2px;
+    }
+    .species-card .date {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 4px;
+    }
+    .invasive-tag {
+      display: inline-block;
+      background: #e74c3c33;
+      color: #e74c3c;
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-top: 3px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      background: #1a1a28;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      font-weight: 600;
+      color: #999;
+      position: sticky;
+      top: 0;
+    }
+    td {
+      padding: 0.5rem 0.8rem;
+      border-top: 1px solid #1a1a28;
+    }
+    .table-scroll {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .level-danger { color: #e74c3c; font-weight: 700; }
+    .level-warning { color: #f39c12; }
+    .level-safe { color: #2ecc71; }
+
+    .full-width { grid-column: 1 / -1; }
+    .time-label { font-size: 0.75rem; color: #666; }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: #555;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>RiverWatch</span> 서울 하천 생태 대시보드</h1>
+    <div class="status-bar" id="statusBar">
+      <span class="time-label" id="lastUpdate">로딩중...</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-header">
+        하천 수위 지도
+        <span class="time-label" id="mapTime"></span>
+      </div>
+      <div class="card-body"><div id="map"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        수위 현황 (전체 관측소)
+        <span class="time-label" id="stationCount"></span>
+      </div>
+      <div class="card-body table-scroll" id="tableBody">
+        <div class="loading">데이터 로딩중...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        도림천 수위 추이 (최근 기록)
+      </div>
+      <div class="card-body"><div id="chart-container"><canvas id="chart"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        도림천 생물 관찰 (최근 30일)
+        <span class="time-label" id="speciesCount"></span>
+      </div>
+      <div class="card-body species-grid" id="speciesGrid">
+        <div class="loading">데이터 로딩중...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gypkipqlkaeocrvzueek.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    };
+
+    const STATION_COORDS = {
+      '여수대교': [37.4985, 127.0774], '대곡교': [37.4730, 127.0742],
+      '탄천2교': [37.5100, 127.0800], '증산교': [37.5770, 126.9250],
+      '성산2교': [37.5680, 126.9130], '고척교': [37.4920, 126.8570],
+      '도림교': [37.4930, 126.8880], '광화교': [37.4750, 126.8520],
+      '기아대교': [37.4650, 126.8930], '신대방역': [37.4890, 126.9190],
+      '양산교': [37.4838, 126.9295], '봉은교': [37.5120, 127.0650],
+      '모래말옆': [37.6530, 127.0350], '노원교': [37.6490, 127.0530],
+      '계성교': [37.6580, 127.0230], '장월교': [37.6450, 127.0290],
+      '신의교': [37.6350, 127.0650], '월계1교': [37.6220, 127.0590],
+      '용두교': [37.5820, 127.0250], '성동교': [37.5550, 127.0400],
+      '마장2교': [37.5650, 127.0300],
+    };
+
+    const statusColors = { danger: '#e74c3c', warning: '#f39c12', safe: '#2ecc71', unknown: '#666' };
+    const statusLabels = { danger: '위험', warning: '주의', safe: '안전', unknown: '?' };
+
+    async function query(table, params = '') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+      return res.json();
+    }
+
+    // --- MAP ---
+    const map = L.map('map').setView([37.54, 126.97], 11);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+    }).addTo(map);
+
+    async function loadMap() {
+      const rows = await query('river_readings',
+        'select=station,river,gu,water_level,level_ratio,status,measured_at&order=id.desc&limit=21');
+
+      const seen = new Set();
+      let dangerN = 0, warnN = 0, safeN = 0;
+
+      rows.forEach(r => {
+        if (seen.has(r.station)) return;
+        seen.add(r.station);
+
+        const coords = STATION_COORDS[r.station];
+        if (!coords) return;
+
+        const color = statusColors[r.status] || '#666';
+        if (r.status === 'danger') dangerN++;
+        else if (r.status === 'warning') warnN++;
+        else safeN++;
+
+        const circle = L.circleMarker(coords, {
+          radius: r.status === 'danger' ? 10 : 7,
+          fillColor: color,
+          color: color,
+          weight: 2,
+          fillOpacity: 0.7,
+        }).addTo(map);
+
+        circle.bindPopup(`
+          <b>${r.station}</b> (${r.river})<br>
+          수위: ${r.water_level}cm / 제방: ${(r.level_ratio / (r.water_level || 1) * (r.water_level || 1)).toFixed(0)}cm<br>
+          비율: <span style="color:${color};font-weight:700">${r.level_ratio}% ${statusLabels[r.status]}</span>
+        `);
+      });
+
+      document.getElementById('statusBar').innerHTML = `
+        <span class="badge danger">${dangerN} 위험</span>
+        <span class="badge warning">${warnN} 주의</span>
+        <span class="badge safe">${safeN} 안전</span>
+      `;
+
+      if (rows.length > 0 && rows[0].measured_at) {
+        const t = new Date(rows[0].measured_at);
+        document.getElementById('mapTime').textContent =
+          t.toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
+    // --- TABLE ---
+    async function loadTable() {
+      const rows = await query('river_readings',
+        'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=level_ratio.desc&limit=21');
+
+      const seen = new Set();
+      const unique = rows.filter(r => { if (seen.has(r.station)) return false; seen.add(r.station); return true; });
+
+      document.getElementById('stationCount').textContent = `${unique.length}개소`;
+
+      let html = '<table><thead><tr><th>관측소</th><th>하천</th><th>구</th><th>수위</th><th>제방</th><th>비율</th><th>상태</th></tr></thead><tbody>';
+      unique.forEach(r => {
+        const cls = `level-${r.status}`;
+        html += `<tr>
+          <td>${r.station}</td><td>${r.river}</td><td>${r.gu}</td>
+          <td>${r.water_level}cm</td><td>${r.embankment_height}cm</td>
+          <td class="${cls}">${r.level_ratio}%</td>
+          <td class="${cls}">${statusLabels[r.status] || ''}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('tableBody').innerHTML = html;
+    }
+
+    // --- CHART ---
+    async function loadChart() {
+      const rows = await query('river_readings',
+        'select=station,water_level,level_ratio,collected_at&river=eq.도림천&order=collected_at.asc&limit=100');
+
+      const stations = {};
+      rows.forEach(r => {
+        if (!stations[r.station]) stations[r.station] = [];
+        stations[r.station].push({ x: new Date(r.collected_at), y: r.level_ratio });
+      });
+
+      const colors = ['#7873f5', '#ff6ec4', '#3ECF8E'];
+      const datasets = Object.keys(stations).map((name, i) => ({
+        label: name,
+        data: stations[name],
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '22',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      }));
+
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'timeseries',
+              time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+              ticks: { color: '#666' },
+              grid: { color: '#1a1a28' },
+            },
+            y: {
+              title: { display: true, text: '수위 비율 (%)', color: '#666' },
+              ticks: { color: '#666' },
+              grid: { color: '#1a1a28' },
+              suggestedMin: 0,
+              suggestedMax: 100,
+            },
+          },
+          plugins: {
+            legend: { labels: { color: '#ccc' } },
+            annotation: {
+              annotations: {
+                dangerLine: { type: 'line', yMin: 80, yMax: 80, borderColor: '#e74c3c44', borderDash: [5,5] },
+                warningLine: { type: 'line', yMin: 50, yMax: 50, borderColor: '#f39c1244', borderDash: [5,5] },
+              }
+            }
+          },
+        },
+      });
+    }
+
+    // --- SPECIES ---
+    async function loadSpecies() {
+      const rows = await query('species_observations',
+        'select=taxon_name,common_name,photo_url,observed_at,is_invasive,observer&river=eq.도림천&order=observed_at.desc&limit=20');
+
+      document.getElementById('speciesCount').textContent = `${rows.length}종`;
+
+      if (rows.length === 0) {
+        document.getElementById('speciesGrid').innerHTML = '<div class="loading">관찰 데이터 없음</div>';
+        return;
+      }
+
+      let html = '';
+      rows.forEach(r => {
+        const imgSrc = r.photo_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">No Photo</text></svg>';
+        const date = r.observed_at ? new Date(r.observed_at).toLocaleDateString('ko-KR') : '';
+        html += `<div class="species-card">
+          <img src="${imgSrc}" alt="${r.taxon_name}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23222%22 width=%22100%22 height=%22100%22/></svg>'">
+          <div class="info">
+            <div class="name">${r.taxon_name || '미확인'}</div>
+            <div class="common">${r.common_name || ''}</div>
+            <div class="date">${date} · ${r.observer || ''}</div>
+            ${r.is_invasive ? '<span class="invasive-tag">외래종</span>' : ''}
+          </div>
+        </div>`;
+      });
+      document.getElementById('speciesGrid').innerHTML = html;
+    }
+
+    // --- INIT ---
+    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies()])
+      .then(() => {
+        document.getElementById('lastUpdate').textContent =
+          `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
+      })
+      .catch(err => console.error('Load error:', err));
+
+    setInterval(() => {
+      Promise.all([loadMap(), loadTable(), loadSpecies()]);
+    }, 5 * 60 * 1000);
+  </script>
+</body>
+</html>

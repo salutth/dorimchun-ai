@@ -59,7 +59,26 @@ alter table invasive_alerts enable row level security;
 create policy "alerts_read" on invasive_alerts for select using (true);
 create policy "alerts_insert" on invasive_alerts for insert with check (true);
 
--- 4. 인덱스
+-- 4. EHI 생태건강성지수
+create table ehi_scores (
+  id bigint generated always as identity primary key,
+  river text not null,
+  biodiversity_score real,
+  water_stability_score real,
+  non_invasive_score real,
+  observation_freq_score real,
+  ehi_score real,
+  grade text,
+  species_count int,
+  reading_count int,
+  calculated_at timestamptz default now()
+);
+
+alter table ehi_scores enable row level security;
+create policy "ehi_read" on ehi_scores for select using (true);
+create policy "ehi_insert" on ehi_scores for insert with check (true);
+
+-- 5. 인덱스
 create index idx_readings_river on river_readings(river);
 create index idx_readings_measured on river_readings(measured_at);
 create index idx_species_river on species_observations(river);
