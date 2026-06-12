@@ -1,8 +1,8 @@
 """
-서울시 하천 수위 모니터링 스크립트
+서울시 하천 수위 모니터링 + Supabase 자동 저장
 - 입력: 서울시 열린데이터 API (실시간 하천 수위)
-- 처리: API 호출 → 하천별 수위 데이터 추출 + 위험 수준 판단
-- 출력: 터미널에 하천별 수위 현황 요약 표시
+- 처리: API 호출 → 수위 데이터 추출 + 위험 수준 판단
+- 출력: 터미널 표시 + Supabase river_readings 테이블 저장
 """
 
 import json
@@ -13,8 +13,11 @@ from datetime import datetime
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-def load_api_key():
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_env():
+    env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
         with open(env_path, encoding="utf-8") as f:
             for line in f:
@@ -22,7 +25,7 @@ def load_api_key():
                 if line and not line.startswith("#") and "=" in line:
                     key, val = line.split("=", 1)
                     os.environ[key.strip()] = val.strip()
-    return os.environ.get("SEOUL_API_KEY", "")
+
 
 def fetch_river_data(api_key):
     url = f"http://openAPI.seoul.go.kr:8088/{api_key}/json/ListRiverStageService/1/100/"
@@ -30,26 +33,64 @@ def fetch_river_data(api_key):
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
+
 def water_level_status(current, embankment):
     try:
         ratio = float(current) / float(embankment) * 100
         if ratio >= 80:
-            return "🔴 위험", ratio
+            return "danger", ratio
         elif ratio >= 50:
-            return "🟡 주의", ratio
+            return "warning", ratio
         else:
-            return "🟢 안전", ratio
+            return "safe", ratio
     except (ValueError, ZeroDivisionError):
-        return "⚪ 측정불가", 0
+        return "unknown", 0
+
+
+STATUS_DISPLAY = {
+    "danger": "\U0001f534 위험",
+    "warning": "\U0001f7e1 주의",
+    "safe": "\U0001f7e2 안전",
+    "unknown": "⚪ 측정불가",
+}
+
+
+def save_to_supabase(records):
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_KEY", "")
+    if not supabase_url or not supabase_key:
+        print("  [Supabase] URL/KEY 없음 — 저장 건너뜀")
+        return 0
+
+    url = f"{supabase_url}/rest/v1/river_readings"
+    payload = json.dumps(records).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("apikey", supabase_key)
+    req.add_header("Authorization", f"Bearer {supabase_key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "return=minimal")
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status in (200, 201):
+                return len(records)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print(f"  [Supabase] 저장 실패 ({e.code}): {body}")
+    except Exception as e:
+        print(f"  [Supabase] 연결 실패: {e}")
+    return 0
+
 
 def main():
-    api_key = load_api_key()
+    load_env()
+    api_key = os.environ.get("SEOUL_API_KEY", "")
     if not api_key:
         print("❌ SEOUL_API_KEY가 .env 파일에 없습니다.")
         return
 
     print("=" * 60)
-    print(f"  서울시 하천 수위 모니터링")
+    print("  서울시 하천 수위 모니터링 — RiverWatch")
     print(f"  조회 시각: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print("=" * 60)
 
@@ -68,31 +109,59 @@ def main():
     rows = service.get("row", [])
     total = service.get("list_total_count", 0)
     print(f"\n  총 {total}개 관측소\n")
-    print(f"  {'관측소':<8} {'하천':<8} {'구':<6} {'수위(cm)':<10} {'제방(cm)':<10} {'상태':<10} {'비율'}")
+    header = f"  {'관측소':<8} {'하천':<8} {'구':<6} {'수위(cm)':<10} {'제방(cm)':<10} {'상태':<10} {'비율'}"
+    print(header)
     print("  " + "-" * 72)
 
     danger_count = 0
+    db_records = []
+
     for r in rows:
         name = r.get("WATG_NM", "")
         river = r.get("RVR_NM", "")
         gu = r.get("GU_OFC_NM", "")
         level = r.get("RLTM_RVR_WATL_CNT", "0")
         embankment = r.get("EBM_HGT", "0")
+        measure_time = r.get("DTRSM_DATA_CLCT_TM", "")
         status, ratio = water_level_status(level, embankment)
 
-        if "위험" in status:
+        if status == "danger":
             danger_count += 1
 
-        print(f"  {name:<8} {river:<8} {gu:<6} {level:>8}   {embankment:>8}   {status:<10} {ratio:.1f}%")
+        display = STATUS_DISPLAY.get(status, status)
+        print(f"  {name:<8} {river:<8} {gu:<6} {level:>8}   {embankment:>8}   {display:<10} {ratio:.1f}%")
 
-    measure_time = rows[0].get("DTRSM_DATA_CLCT_TM", "") if rows else ""
-    print(f"\n  측정 시각: {measure_time}")
+        measured_at = None
+        if measure_time:
+            try:
+                measured_at = datetime.strptime(measure_time, "%Y-%m-%d %H:%M").isoformat()
+            except ValueError:
+                measured_at = measure_time
+
+        db_records.append({
+            "station": name,
+            "river": river,
+            "gu": gu,
+            "water_level": float(level) if level else 0,
+            "embankment_height": float(embankment) if embankment else 0,
+            "level_ratio": round(ratio, 1),
+            "status": status,
+            "measured_at": measured_at,
+        })
+
+    first_measure = rows[0].get("DTRSM_DATA_CLCT_TM", "") if rows else ""
+    print(f"\n  측정 시각: {first_measure}")
 
     if danger_count > 0:
         print(f"\n  ⚠️  위험 수준 관측소: {danger_count}개 — 주의가 필요합니다!")
     else:
-        print(f"\n  ✅ 전체 관측소 안전 수준입니다.")
+        print("\n  ✅ 전체 관측소 안전 수준입니다.")
+
+    saved = save_to_supabase(db_records)
+    if saved:
+        print(f"  \U0001f4be Supabase 저장 완료: {saved}건")
     print()
+
 
 if __name__ == "__main__":
     main()
