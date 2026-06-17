@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:title" content="시민이 만들고, AI가 분석하고, 정책이 바뀐다">
+  <meta property="og:description" content="장소만 바꾸면 어디든 돌아가는 시민과학 AI 플랫폼">
+  <title>시민과학 AI 플랫폼 — 시민이 만들고, AI가 분석하고, 정책이 바뀐다</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,'Pretendard',sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+
+    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem 1.5rem;position:relative}
+    .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 30%,#7873f512 0%,transparent 70%)}
+    .hero .tag{font-size:0.75rem;color:#7873f5;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:1.5rem;position:relative}
+    .hero h1{font-size:clamp(1.8rem,5vw,3rem);font-weight:900;line-height:1.3;margin-bottom:1rem;position:relative}
+    .hero h1 .accent{color:#7873f5}
+    .hero .sub{font-size:clamp(0.9rem,2.5vw,1.15rem);color:#888;line-height:1.7;max-width:520px;position:relative}
+    .hero .sub b{color:#ccc}
+    .scroll-hint{position:absolute;bottom:2rem;color:#444;font-size:0.75rem;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
+
+    .section{max-width:900px;margin:0 auto;padding:4rem 1.5rem}
+    .section-tag{font-size:0.7rem;color:#7873f5;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:0.8rem}
+    .section h2{font-size:clamp(1.4rem,3.5vw,2rem);font-weight:800;margin-bottom:1rem}
+    .section .desc{color:#888;font-size:0.95rem;line-height:1.7;margin-bottom:2rem}
+
+    .engine{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin:2rem 0}
+    .engine-step{text-align:center;padding:1.5rem;min-width:140px;flex:1}
+    .engine-step .icon{font-size:2.5rem;margin-bottom:0.5rem}
+    .engine-step .label{font-size:0.95rem;font-weight:700;margin-bottom:0.3rem}
+    .engine-step .detail{font-size:0.75rem;color:#888}
+    .engine-arrow{font-size:1.5rem;color:#333;padding:0 0.3rem}
+    @media(max-width:600px){.engine-arrow{transform:rotate(90deg);padding:0.5rem 0}.engine{flex-direction:column}}
+
+    .projects{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+    .project-card{background:#12121a;border:1px solid #222;border-radius:16px;padding:1.5rem;transition:all 0.3s;position:relative;overflow:hidden}
+    .project-card:hover{border-color:#7873f5;transform:translateY(-4px)}
+    .project-card .p-icon{font-size:2rem;margin-bottom:0.8rem}
+    .project-card h3{font-size:1.05rem;font-weight:700;margin-bottom:0.4rem}
+    .project-card .p-where{font-size:0.75rem;color:#7873f5;margin-bottom:0.6rem}
+    .project-card .p-desc{font-size:0.82rem;color:#888;line-height:1.6;margin-bottom:0.8rem}
+    .project-card .p-tags{display:flex;flex-wrap:wrap;gap:0.3rem}
+    .p-tag{font-size:0.65rem;padding:2px 8px;border-radius:6px;background:#1a1a28;color:#999;border:1px solid #2a2a3a}
+    .project-card .p-status{position:absolute;top:1rem;right:1rem;font-size:0.65rem;padding:2px 8px;border-radius:8px;font-weight:600}
+    .status-live{background:#2ecc7122;color:#2ecc71;border:1px solid #2ecc7144}
+    .status-plan{background:#f39c1222;color:#f39c12;border:1px solid #f39c1244}
+
+    .data-row{display:flex;justify-content:center;gap:2rem;padding:2rem 0;flex-wrap:wrap}
+    .data-item{text-align:center}
+    .data-item .num{font-size:2.2rem;font-weight:800;color:#7873f5}
+    .data-item .label{font-size:0.75rem;color:#666;margin-top:0.2rem}
+
+    .team-bar{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:1rem}
+    .team-item{text-align:center;min-width:120px}
+    .team-item .t-name{font-size:0.9rem;font-weight:600}
+    .team-item .t-role{font-size:0.72rem;color:#888}
+
+    .cta-section{text-align:center;padding:4rem 1.5rem;background:linear-gradient(180deg,transparent,#7873f508)}
+    .cta-section h2{font-size:clamp(1.3rem,3vw,1.8rem);font-weight:800;margin-bottom:0.8rem}
+    .cta-section p{color:#888;font-size:0.9rem;margin-bottom:1.5rem}
+    .cta-btn{display:inline-block;background:#7873f5;color:#fff;text-decoration:none;padding:0.9rem 2.5rem;border-radius:14px;font-weight:700;font-size:1rem;transition:all 0.2s}
+    .cta-btn:hover{background:#6560e0;transform:translateY(-2px)}
+    .cta-links{margin-top:1.5rem;display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap}
+    .cta-links a{color:#666;text-decoration:none;font-size:0.82rem;transition:color 0.2s}
+    .cta-links a:hover{color:#7873f5}
+
+    .footer{text-align:center;padding:2rem;font-size:0.7rem;color:#333;border-top:1px solid #111}
+    .divider{width:40px;height:2px;background:#7873f533;margin:3rem auto}
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="tag">Citizen Science AI Platform</div>
+    <h1>
+      <span class="accent">시민</span>이 만들고<br>
+      <span class="accent">AI</span>가 분석하고<br>
+      <span class="accent">정책</span>이 바뀐다
+    </h1>
+    <p class="sub">
+      하천, 바다, 문화재 — <b>장소만 바꾸면 어디든 돌아가는</b><br>
+      시민과학 AI 플랫폼
+    </p>
+    <div class="scroll-hint">아래로 스크롤 ↓</div>
+  </section>
+
+  <section class="section">
+    <div class="section-tag">How it works</div>
+    <h2>하나의 엔진, 무한한 현장</h2>
+    <p class="desc">시민이 현장에서 데이터를 만들면, AI Agent가 자동으로 수집·분석하고, 정책 근거를 생성합니다. 이 구조는 하천이든 바다든 문화재든 동일하게 작동합니다.</p>
+
+    <div class="engine">
+      <div class="engine-step">
+        <div class="icon">📱</div>
+        <div class="label">시민이 관찰</div>
+        <div class="detail">사진 한 장, 위치 하나</div>
+      </div>
+      <div class="engine-arrow">→</div>
+      <div class="engine-step">
+        <div class="icon">🤖</div>
+        <div class="label">AI가 분석</div>
+        <div class="detail">종 식별, 지표 산출, 위험 감지</div>
+      </div>
+      <div class="engine-arrow">→</div>
+      <div class="engine-step">
+        <div class="icon">📊</div>
+        <div class="label">데이터가 쌓이고</div>
+        <div class="detail">실시간 대시보드, 시계열 축적</div>
+      </div>
+      <div class="engine-arrow">→</div>
+      <div class="engine-step">
+        <div class="icon">📋</div>
+        <div class="label">정책이 바뀐다</div>
+        <div class="detail">보고서 자동화, 조례 근거</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <div class="section-tag">Projects</div>
+    <h2>같은 엔진, 다른 현장</h2>
+    <p class="desc">도림천에서 시작해 서울 10개 하천으로, 서남해 해안으로, 그리고 문화재까지. 시민과 현장이 있는 곳이면 어디든.</p>
+
+    <div class="projects">
+      <div class="project-card">
+        <span class="p-status status-live">LIVE</span>
+        <div class="p-icon">🏞️</div>
+        <h3>RiverWatch</h3>
+        <div class="p-where">서울 10개 도시하천</div>
+        <p class="p-desc">수위 모니터링 + 생물 120종 관찰 + EHI 생태건강도 A~E 등급 산출 + 외래종 경보 + 정책 보고서 자동화</p>
+        <div class="p-tags">
+          <span class="p-tag">AI Agent 4개</span>
+          <span class="p-tag">매시간 자동수집</span>
+          <span class="p-tag">실시간 대시보드</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <span class="p-status status-plan">계획</span>
+        <div class="p-icon">🏛️</div>
+        <h3>하천ON + 문화재방재</h3>
+        <div class="p-where">서울 수변 문화재 59건</div>
+        <p class="p-desc">LSTM 침수 예측 + 문화재 위치 오버레이 → 국보·보물 침수 선제 경보 3단계 자동화</p>
+        <div class="p-tags">
+          <span class="p-tag">침수 예측 AI</span>
+          <span class="p-tag">문화재 방호</span>
+          <span class="p-tag">취약가구 경보</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <span class="p-status status-plan">계획</span>
+        <div class="p-icon">🌊</div>
+        <h3>K-Climate 서남해</h3>
+        <div class="p-where">완도 망남마을 · 서남해안</div>
+        <p class="p-desc">해양 기후안전 + 갯벌 생태 모니터링 + 블루카본 탄소 크레딧 연동</p>
+        <div class="p-tags">
+          <span class="p-tag">해양 모니터링</span>
+          <span class="p-tag">블루카본</span>
+          <span class="p-tag">기후적응</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <span class="p-status status-plan">계획</span>
+        <div class="p-icon">🗺️</div>
+        <h3>서남해 그랜드</h3>
+        <div class="p-where">전남 8개 시군 광역</div>
+        <p class="p-desc">귀농·귀촌·귀어 AI 매칭 + 데이터 연금 + 생태 워케이션 — 지역순환경제 플랫폼</p>
+        <div class="p-tags">
+          <span class="p-tag">귀향 3Track</span>
+          <span class="p-tag">데이터 연금</span>
+          <span class="p-tag">Hub & Spoke</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" style="text-align:center">
+    <div class="section-tag">Live Data</div>
+    <h2>지금 돌아가고 있습니다</h2>
+    <p class="desc" style="margin-left:auto;margin-right:auto">RiverWatch는 Beta 시범운영 중입니다. 매시간 데이터가 쌓이고 있습니다.</p>
+
+    <div class="data-row">
+      <div class="data-item"><div class="num" id="dRivers">10</div><div class="label">모니터링 하천</div></div>
+      <div class="data-item"><div class="num" id="dSpecies">120</div><div class="label">발견된 종</div></div>
+      <div class="data-item"><div class="num" id="dStations">21</div><div class="label">관측소</div></div>
+      <div class="data-item"><div class="num" id="dAgents">4</div><div class="label">AI Agent</div></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" style="text-align:center">
+    <div class="section-tag">Team</div>
+    <h2>만드는 사람들</h2>
+    <div class="team-bar">
+      <div class="team-item"><div class="t-name">도깨비 3.0</div><div class="t-role">도림천을 깨우는 비전메이커</div></div>
+      <div class="team-item"><div class="t-name">AI활동가 1기</div><div class="t-role">사회혁신교육원</div></div>
+      <div class="team-item"><div class="t-name">도림천 주민모임</div><div class="t-role">1999년~ 25년</div></div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>직접 보시겠습니까?</h2>
+    <p>서울 10개 하천의 실시간 생태 데이터를 확인하세요</p>
+    <a href="dashboard.html" class="cta-btn">RiverWatch 대시보드 →</a>
+    <div class="cta-links">
+      <a href="mission.html">관찰 미션</a>
+      <a href="report.html">시민 제보</a>
+      <a href="today.html">오늘의 하천</a>
+    </div>
+  </section>
+
+  <div class="footer">
+    시민이 만들고, AI가 분석하고, 정책이 바뀐다<br>
+    도깨비3.0 · AI활동가 1기 · 사회혁신교육원 사회적협동조합<br>
+    Beta 시범운영 중
+  </div>
+
+  <script>
+    const SB='https://gypkipqlkaeocrvzueek.supabase.co';
+    const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+    const H={'apikey':KEY,'Authorization':`Bearer ${KEY}`};
+
+    fetch(`${SB}/rest/v1/species_observations?select=taxon_name&limit=500`,{headers:H})
+      .then(r=>r.json())
+      .then(data=>{
+        const unique=new Set();
+        data.forEach(s=>{if(s.taxon_name)unique.add(s.taxon_name)});
+        if(unique.size>0) document.getElementById('dSpecies').textContent=unique.size;
+      }).catch(()=>{});
+
+    fetch(`${SB}/rest/v1/ehi_scores?select=river&limit=30`,{headers:H})
+      .then(r=>r.json())
+      .then(data=>{
+        const rivers=new Set();
+        data.forEach(e=>{const r=(e.river||'').trim();if(r)rivers.add(r)});
+        if(rivers.size>0) document.getElementById('dRivers').textContent=rivers.size;
+      }).catch(()=>{});
+  </script>
+</body>
+</html>
