@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:title" content="서울 하천 생물 퀴즈">
+  <meta property="og:description" content="사진 속 생물은 어느 하천에서 발견됐을까?">
+  <title>RiverWatch — 하천 퀴즈 🎮</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Pretendard', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    .top-bar {
+      padding: 0.7rem 1.2rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .top-bar a { color: #7873f5; text-decoration: none; font-size: 0.82rem; }
+    .score-display { display: flex; gap: 1rem; align-items: center; }
+    .score-display .score { font-size: 0.85rem; font-weight: 700; color: #7873f5; }
+    .score-display .streak { font-size: 0.85rem; color: #f39c12; }
+
+    .game-area {
+      flex: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Start Screen */
+    .start-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1.5rem;
+    }
+    .start-screen .logo { font-size: 4rem; }
+    .start-screen h1 { font-size: 1.8rem; font-weight: 800; }
+    .start-screen h1 span { color: #7873f5; }
+    .start-screen p { color: #888; font-size: 0.9rem; line-height: 1.6; max-width: 300px; }
+    .start-btn {
+      background: linear-gradient(135deg, #7873f5, #6560e0);
+      color: #fff;
+      border: none;
+      padding: 1rem 3rem;
+      border-radius: 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+    .start-btn:hover { transform: scale(1.05); }
+    .start-btn:active { transform: scale(0.98); }
+    .mode-select { display: flex; gap: 0.8rem; margin-top: 0.5rem; }
+    .mode-btn {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      color: #e0e0e0;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn:hover, .mode-btn.active { border-color: #7873f5; background: #7873f520; }
+
+    /* Question */
+    .question-card {
+      background: #12121a;
+      border: 1px solid #222;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .q-image-wrap {
+      position: relative;
+      height: 250px;
+      overflow: hidden;
+      background: #111;
+    }
+    .q-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: filter 0.5s;
+    }
+    .q-image-wrap .q-number {
+      position: absolute;
+      top: 0.8rem;
+      left: 0.8rem;
+      background: #0008;
+      padding: 0.3rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+    .q-image-wrap .timer-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: #7873f5;
+      transition: width 0.1s linear;
+    }
+    .q-body { padding: 1rem; }
+    .q-body .q-text { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .q-body .q-hint { font-size: 0.78rem; color: #888; font-style: italic; }
+
+    /* Choices */
+    .choices { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #12121a;
+      border: 2px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      color: #e0e0e0;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+    }
+    .choice-btn:hover:not(.disabled) { border-color: #7873f5; background: #7873f515; transform: translateX(4px); }
+    .choice-btn .key {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #1a1a28;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .choice-btn.correct { border-color: #2ecc71; background: #2ecc7115; }
+    .choice-btn.correct .key { background: #2ecc71; color: #fff; }
+    .choice-btn.wrong { border-color: #e74c3c; background: #e74c3c15; }
+    .choice-btn.wrong .key { background: #e74c3c; color: #fff; }
+    .choice-btn.disabled { pointer-events: none; opacity: 0.6; }
+    .choice-btn.disabled.correct { opacity: 1; }
+
+    /* Feedback */
+    .feedback {
+      text-align: center;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      display: none;
+    }
+    .feedback.correct { display: block; background: #2ecc7115; border: 1px solid #2ecc7133; color: #2ecc71; }
+    .feedback.wrong { display: block; background: #e74c3c15; border: 1px solid #e74c3c33; color: #e74c3c; }
+    .feedback .fb-text { font-size: 1rem; margin-bottom: 0.3rem; }
+    .feedback .fb-detail { font-size: 0.78rem; color: #888; font-weight: 400; }
+
+    .next-btn {
+      width: 100%;
+      background: #7873f5;
+      color: #fff;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+    }
+    .next-btn:hover { background: #6560e0; }
+
+    /* Result Screen */
+    .result-screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1rem;
+    }
+    .result-screen .big-emoji { font-size: 5rem; animation: bounce 0.5s ease; }
+    @keyframes bounce { 0%{transform:scale(0)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .result-screen h2 { font-size: 1.5rem; font-weight: 800; }
+    .result-screen .result-score { font-size: 3rem; font-weight: 800; color: #7873f5; }
+    .result-screen .result-detail { color: #888; font-size: 0.9rem; line-height: 1.6; }
+    .result-screen .result-grade {
+      font-size: 1.2rem;
+      padding: 0.5rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+    .rg-S { background: #7873f522; color: #7873f5; border: 1px solid #7873f544; }
+    .rg-A { background: #2ecc7122; color: #2ecc71; border: 1px solid #2ecc7144; }
+    .rg-B { background: #f39c1222; color: #f39c12; border: 1px solid #f39c1244; }
+    .rg-C { background: #e74c3c22; color: #e74c3c; border: 1px solid #e74c3c44; }
+
+    .share-row { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+    .share-btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid #2a2a3a;
+      background: #12121a;
+      color: #e0e0e0;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .share-btn:hover { border-color: #7873f5; }
+    .share-btn.primary { background: #7873f5; color: #fff; border-color: #7873f5; }
+
+    .hidden { display: none !important; }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      top: -10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: fall linear forwards;
+      pointer-events: none;
+      z-index: 999;
+    }
+    @keyframes fall {
+      to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="dashboard.html">← 대시보드</a>
+    <div class="score-display">
+      <span class="score" id="scoreLabel">0점</span>
+      <span class="streak" id="streakLabel"></span>
+    </div>
+  </div>
+
+  <div class="game-area">
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+      <div class="logo">🐟</div>
+      <h1>서울 하천<br><span>생물 퀴즈</span></h1>
+      <p>사진 속 생물은 어느 하천에서 발견됐을까요?<br>서울 10개 하천, 120종의 생물 데이터로 만든 퀴즈!</p>
+      <button class="start-btn" onclick="startGame()">게임 시작</button>
+      <div class="mode-select">
+        <button class="mode-btn active" onclick="setMode(this,5)">5문제</button>
+        <button class="mode-btn" onclick="setMode(this,10)">10문제</button>
+        <button class="mode-btn" onclick="setMode(this,20)">도전!</button>
+      </div>
+    </div>
+
+    <!-- Question Screen -->
+    <div id="questionScreen" class="hidden">
+      <div class="question-card">
+        <div class="q-image-wrap">
+          <img id="qImage" src="" alt="">
+          <div class="q-number" id="qNumber">1 / 5</div>
+          <div class="timer-bar" id="timerBar"></div>
+        </div>
+        <div class="q-body">
+          <div class="q-text" id="qText">이 생물은 어느 하천에서 발견됐을까요?</div>
+          <div class="q-hint" id="qHint"></div>
+        </div>
+      </div>
+      <div class="choices" id="choices"></div>
+      <div class="feedback" id="feedback">
+        <div class="fb-text" id="fbText"></div>
+        <div class="fb-detail" id="fbDetail"></div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">다음 문제</button>
+    </div>
+
+    <!-- Result Screen -->
+    <div class="result-screen" id="resultScreen">
+      <div class="big-emoji" id="resultEmoji">🎉</div>
+      <h2 id="resultTitle">퀴즈 완료!</h2>
+      <div class="result-score" id="resultScore">0 / 5</div>
+      <div class="result-grade" id="resultGrade">A등급</div>
+      <div class="result-detail" id="resultDetail"></div>
+      <div class="share-row">
+        <button class="share-btn primary" onclick="startGame()">다시 도전</button>
+        <button class="share-btn" onclick="shareResult()">결과 공유</button>
+        <button class="share-btn" onclick="location.href='dashboard.html'">대시보드</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SB = 'https://gypkipqlkaeocrvzueek.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+    const H = {'apikey':KEY,'Authorization':`Bearer ${KEY}`};
+
+    let allSpecies = [];
+    let questions = [];
+    let current = 0;
+    let score = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let totalQ = 5;
+    let timerInterval = null;
+    let timeLeft = 0;
+
+    function setMode(btn, n) {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      totalQ = n;
+    }
+
+    async function loadData() {
+      const res = await fetch(`${SB}/rest/v1/species_observations?select=taxon_name,common_name,photo_url,river,observed_at&limit=500`, {headers:H});
+      const data = await res.json();
+      allSpecies = data.filter(s => s.photo_url && /^https?:\/\//.test(s.photo_url) && s.river);
+      return allSpecies;
+    }
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRandom() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    let seed = Date.now();
+    function seededRandom() {
+      seed = (seed * 16807 + 0) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    function getAllRivers() {
+      const rivers = new Set();
+      allSpecies.forEach(s => rivers.add(s.river));
+      return [...rivers];
+    }
+
+    function buildQuestions() {
+      const pool = shuffle(allSpecies);
+      const rivers = getAllRivers();
+      const qs = [];
+
+      for (let i = 0; i < Math.min(totalQ, pool.length); i++) {
+        const correct = pool[i];
+        const wrongRivers = rivers.filter(r => r !== correct.river);
+        const shuffledWrong = shuffle(wrongRivers).slice(0, 3);
+        const options = shuffle([correct.river, ...shuffledWrong]);
+
+        qs.push({
+          species: correct,
+          options,
+          correctAnswer: correct.river,
+        });
+      }
+      return qs;
+    }
+
+    function startGame() {
+      seed = Date.now();
+      if (allSpecies.length === 0) {
+        loadData().then(() => {
+          if (allSpecies.length < 4) {
+            alert('사진이 있는 관찰 데이터가 부족합니다. 최소 4건 필요.');
+            return;
+          }
+          beginGame();
+        });
+      } else {
+        beginGame();
+      }
+    }
+
+    function beginGame() {
+      questions = buildQuestions();
+      current = 0;
+      score = 0;
+      streak = 0;
+      maxStreak = 0;
+      updateScore();
+
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('questionScreen').classList.remove('hidden');
+
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const q = questions[current];
+      document.getElementById('qNumber').textContent = `${current + 1} / ${questions.length}`;
+      document.getElementById('qImage').src = q.species.photo_url;
+      document.getElementById('qImage').style.filter = '';
+
+      const hint = q.species.common_name
+        ? `힌트: ${q.species.common_name}`
+        : `학명: ${q.species.taxon_name || '?'}`;
+      document.getElementById('qHint').textContent = hint;
+      document.getElementById('qText').textContent = '이 생물은 어느 하천에서 발견됐을까요?';
+
+      const keys = ['A', 'B', 'C', 'D'];
+      let choicesHtml = '';
+      q.options.forEach((opt, i) => {
+        choicesHtml += `<button class="choice-btn" onclick="answer(this,'${opt.replace(/'/g, "\\'")}')">
+          <span class="key">${keys[i]}</span>
+          <span>${opt}</span>
+        </button>`;
+      });
+      document.getElementById('choices').innerHTML = choicesHtml;
+      document.getElementById('feedback').className = 'feedback';
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+
+      startTimer();
+    }
+
+    function startTimer() {
+      timeLeft = 100;
+      const bar = document.getElementById('timerBar');
+      bar.style.width = '100%';
+      bar.style.background = '#7873f5';
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft -= 0.5;
+        bar.style.width = timeLeft + '%';
+        if (timeLeft < 30) bar.style.background = '#e74c3c';
+        else if (timeLeft < 60) bar.style.background = '#f39c12';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timeUp();
+        }
+      }, 100);
+    }
+
+    function timeUp() {
+      const q = questions[current];
+      streak = 0;
+      updateScore();
+
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.classList.add('disabled');
+        if (btn.textContent.includes(q.correctAnswer)) btn.classList.add('correct');
+      });
+
+      const fb = document.getElementById('feedback');
+      fb.className = 'feedback wrong';
+      fb.style.display = 'block';
+      document.getElementById('fbText').textContent = '⏰ 시간 초과!';
+      document.getElementById('fbDetail').textContent = `정답: ${q.correctAnswer}`;
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('nextBtn').textContent = current < questions.length - 1 ? '다음 문제 →' : '결과 보기';
+    }
+
+    function answer(btn, chosen) {
+      clearInterval(timerInterval);
+      const q = questions[current];
+      const isCorrect = chosen === q.correctAnswer;
+
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        b.classList.add('disabled');
+        if (b.textContent.includes(q.correctAnswer)) b.classList.add('correct');
+      });
+
+      if (isCorrect) {
+        btn.classList.add('correct');
+        score++;
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+        miniConfetti();
+      } else {
+        btn.classList.add('wrong');
+        streak = 0;
+      }
+
+      updateScore();
+
+      const fb = document.getElementById('feedback');
+      const fbText = document.getElementById('fbText');
+      const fbDetail = document.getElementById('fbDetail');
+
+      if (isCorrect) {
+        fb.className = 'feedback correct';
+        const cheers = ['정답! 🎉', '맞았어요! ✨', '대단해요! 🌟', '완벽! 💫'];
+        fbText.textContent = cheers[Math.floor(seededRandom() * cheers.length)];
+        const bonusText = streak >= 3 ? ` | 🔥 ${streak}연속 정답!` : '';
+        fbDetail.textContent = `${q.species.taxon_name || ''} — ${q.correctAnswer}에서 발견${bonusText}`;
+      } else {
+        fb.className = 'feedback wrong';
+        fbText.textContent = '아쉬워요! 😅';
+        fbDetail.textContent = `정답은 ${q.correctAnswer}이었어요. ${q.species.taxon_name || ''}`;
+      }
+      fb.style.display = 'block';
+
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('nextBtn').textContent = current < questions.length - 1 ? '다음 문제 →' : '결과 보기';
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current >= questions.length) {
+        showResult();
+      } else {
+        showQuestion();
+      }
+    }
+
+    function updateScore() {
+      document.getElementById('scoreLabel').textContent = `${score}점`;
+      document.getElementById('streakLabel').textContent = streak >= 2 ? `🔥${streak}` : '';
+    }
+
+    function showResult() {
+      document.getElementById('questionScreen').classList.add('hidden');
+      const rs = document.getElementById('resultScreen');
+      rs.style.display = 'flex';
+
+      const pct = score / questions.length;
+      let emoji, title, grade, gradeClass;
+
+      if (pct === 1) { emoji = '🏆'; title = '완벽! 하천 박사!'; grade = 'S등급 — 하천 마스터'; gradeClass = 'rg-S'; }
+      else if (pct >= 0.8) { emoji = '🎉'; title = '훌륭해요!'; grade = 'A등급 — 하천 전문가'; gradeClass = 'rg-A'; }
+      else if (pct >= 0.5) { emoji = '😊'; title = '좋은 시작!'; grade = 'B등급 — 하천 탐험가'; gradeClass = 'rg-B'; }
+      else { emoji = '💪'; title = '다시 도전!'; grade = 'C등급 — 하천 초보'; gradeClass = 'rg-C'; }
+
+      document.getElementById('resultEmoji').textContent = emoji;
+      document.getElementById('resultTitle').textContent = title;
+      document.getElementById('resultScore').textContent = `${score} / ${questions.length}`;
+      document.getElementById('resultGrade').textContent = grade;
+      document.getElementById('resultGrade').className = `result-grade ${gradeClass}`;
+
+      let detail = `최대 연속 정답: ${maxStreak}회`;
+      if (maxStreak >= 3) detail += ' 🔥';
+      detail += `\n서울 10개 하천에서 발견된 생물로 만든 퀴즈입니다.`;
+      document.getElementById('resultDetail').textContent = detail;
+
+      if (pct >= 0.8) bigConfetti();
+    }
+
+    function shareResult() {
+      const pct = Math.round(score / questions.length * 100);
+      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://sakyowon-ai.pages.dev/play.html`;
+
+      if (navigator.share) {
+        navigator.share({ title: '하천 생물 퀴즈 결과', text }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => alert('결과가 복사되었습니다!'));
+      }
+    }
+
+    function miniConfetti() {
+      const colors = ['#7873f5', '#2ecc71', '#f39c12', '#e74c3c', '#ff6ec4'];
+      for (let i = 0; i < 15; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = (30 + Math.random() * 40) + '%';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDuration = (1 + Math.random()) + 's';
+        el.style.animationDelay = (Math.random() * 0.3) + 's';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2000);
+      }
+    }
+
+    function bigConfetti() {
+      const colors = ['#7873f5', '#2ecc71', '#f39c12', '#ff6ec4', '#ffd700'];
+      for (let i = 0; i < 60; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + '%';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (6 + Math.random() * 8) + 'px';
+        el.style.height = (6 + Math.random() * 8) + 'px';
+        el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+        el.style.animationDelay = (Math.random() * 0.5) + 's';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('questionScreen').classList.contains('hidden')) return;
+      const btns = document.querySelectorAll('.choice-btn:not(.disabled)');
+      const map = {a:0, b:1, c:2, d:3, '1':0, '2':1, '3':2, '4':3};
+      const idx = map[e.key.toLowerCase()];
+      if (idx !== undefined && btns[idx]) btns[idx].click();
+      if ((e.key === 'Enter' || e.key === ' ') && document.getElementById('nextBtn').style.display !== 'none') {
+        nextQuestion();
+      }
+    });
+
+    loadData();
+  </script>
+</body>
+</html>
