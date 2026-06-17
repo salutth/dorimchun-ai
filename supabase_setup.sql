@@ -84,3 +84,25 @@ create index idx_readings_measured on river_readings(measured_at);
 create index idx_species_river on species_observations(river);
 create index idx_species_taxon on species_observations(taxon_name);
 create index idx_species_invasive on species_observations(is_invasive);
+
+-- 6. 중복 방지 (V5 보안 패치)
+alter table species_observations
+  add column if not exists inaturalist_id bigint;
+create unique index if not exists uq_species_inat_id
+  on species_observations(inaturalist_id) where inaturalist_id is not null;
+
+alter table river_readings
+  add constraint uq_readings_station_time unique (station, measured_at);
+
+-- 7. 헬스체크 테이블 (V6 모니터링)
+create table if not exists collector_health (
+  id bigint generated always as identity primary key,
+  collector text not null,
+  status text not null default 'ok',
+  record_count int default 0,
+  error_message text,
+  collected_at timestamptz default now()
+);
+alter table collector_health enable row level security;
+create policy "health_read" on collector_health for select using (true);
+create policy "health_insert" on collector_health for insert with check (true);

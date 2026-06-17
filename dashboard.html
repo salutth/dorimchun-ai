@@ -145,6 +145,66 @@
     .full-width { grid-column: 1 / -1; }
     .time-label { font-size: 0.75rem; color: #666; }
 
+    .ehi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.6rem;
+      padding: 1rem;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .ehi-card {
+      background: #1a1a28;
+      border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+      border: 1px solid #2a2a3a;
+      transition: border-color 0.2s;
+    }
+    .ehi-card:hover { border-color: #7873f5; }
+    .ehi-card .river-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .ehi-card .grade {
+      font-size: 1.8rem;
+      font-weight: 800;
+      line-height: 1;
+      margin: 0.3rem 0;
+    }
+    .ehi-card .score { font-size: 0.8rem; color: #999; }
+    .ehi-card .bar {
+      height: 4px;
+      border-radius: 2px;
+      background: #2a2a3a;
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+    .ehi-card .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.5s;
+    }
+    .grade-A, .grade-B { color: #2ecc71; }
+    .grade-C { color: #f39c12; }
+    .grade-D, .grade-E { color: #e74c3c; }
+    .bar-A .bar-fill, .bar-B .bar-fill { background: #2ecc71; }
+    .bar-C .bar-fill { background: #f39c12; }
+    .bar-D .bar-fill, .bar-E .bar-fill { background: #e74c3c; }
+
+    .report-section { padding: 1rem; }
+    .report-btn {
+      display: inline-block;
+      background: #7873f5;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .report-btn:hover { background: #6560e0; }
+    .report-meta { font-size: 0.75rem; color: #666; margin-top: 0.5rem; }
+
     .loading {
       display: flex;
       align-items: center;
@@ -202,6 +262,16 @@
         <div class="loading">데이터 로딩중...</div>
       </div>
     </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        생태건강도 (EHI) — 하천별 등급
+        <span class="time-label" id="ehiTime"></span>
+      </div>
+      <div class="card-body ehi-grid" id="ehiGrid">
+        <div class="loading">EHI 데이터 로딩중...</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -229,6 +299,12 @@
 
     const statusColors = { danger: '#e74c3c', warning: '#f39c12', safe: '#2ecc71', unknown: '#666' };
     const statusLabels = { danger: '위험', warning: '주의', safe: '안전', unknown: '?' };
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str ?? '';
+      return d.innerHTML;
+    }
 
     async function query(table, params = '') {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
@@ -269,9 +345,9 @@
         }).addTo(map);
 
         circle.bindPopup(`
-          <b>${r.station}</b> (${r.river})<br>
-          수위: ${r.water_level}cm / 제방: ${(r.level_ratio / (r.water_level || 1) * (r.water_level || 1)).toFixed(0)}cm<br>
-          비율: <span style="color:${color};font-weight:700">${r.level_ratio}% ${statusLabels[r.status]}</span>
+          <b>${esc(r.station)}</b> (${esc(r.river)})<br>
+          수위: ${esc(r.water_level)}cm / 제방: ${esc((r.level_ratio / (r.water_level || 1) * (r.water_level || 1)).toFixed(0))}cm<br>
+          비율: <span style="color:${color};font-weight:700">${esc(r.level_ratio)}% ${esc(statusLabels[r.status])}</span>
         `);
       });
 
@@ -300,12 +376,12 @@
 
       let html = '<table><thead><tr><th>관측소</th><th>하천</th><th>구</th><th>수위</th><th>제방</th><th>비율</th><th>상태</th></tr></thead><tbody>';
       unique.forEach(r => {
-        const cls = `level-${r.status}`;
+        const cls = `level-${esc(r.status)}`;
         html += `<tr>
-          <td>${r.station}</td><td>${r.river}</td><td>${r.gu}</td>
-          <td>${r.water_level}cm</td><td>${r.embankment_height}cm</td>
-          <td class="${cls}">${r.level_ratio}%</td>
-          <td class="${cls}">${statusLabels[r.status] || ''}</td>
+          <td>${esc(r.station)}</td><td>${esc(r.river)}</td><td>${esc(r.gu)}</td>
+          <td>${esc(r.water_level)}cm</td><td>${esc(r.embankment_height)}cm</td>
+          <td class="${cls}">${esc(r.level_ratio)}%</td>
+          <td class="${cls}">${esc(statusLabels[r.status] || '')}</td>
         </tr>`;
       });
       html += '</tbody></table>';
@@ -381,15 +457,16 @@
       }
 
       let html = '';
+      const fallbackImg = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">No Photo</text></svg>';
       rows.forEach(r => {
-        const imgSrc = r.photo_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">No Photo</text></svg>';
+        const imgSrc = r.photo_url && /^https?:\/\//.test(r.photo_url) ? esc(r.photo_url) : fallbackImg;
         const date = r.observed_at ? new Date(r.observed_at).toLocaleDateString('ko-KR') : '';
         html += `<div class="species-card">
-          <img src="${imgSrc}" alt="${r.taxon_name}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23222%22 width=%22100%22 height=%22100%22/></svg>'">
+          <img src="${imgSrc}" alt="${esc(r.taxon_name)}" loading="lazy" onerror="this.src='${fallbackImg}'">
           <div class="info">
-            <div class="name">${r.taxon_name || '미확인'}</div>
-            <div class="common">${r.common_name || ''}</div>
-            <div class="date">${date} · ${r.observer || ''}</div>
+            <div class="name">${esc(r.taxon_name || '미확인')}</div>
+            <div class="common">${esc(r.common_name || '')}</div>
+            <div class="date">${esc(date)} · ${esc(r.observer || '')}</div>
             ${r.is_invasive ? '<span class="invasive-tag">외래종</span>' : ''}
           </div>
         </div>`;
@@ -397,8 +474,43 @@
       document.getElementById('speciesGrid').innerHTML = html;
     }
 
+    // --- EHI ---
+    async function loadEHI() {
+      const rows = await query('ehi_scores',
+        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&order=calculated_at.desc&limit=30');
+
+      const latest = {};
+      rows.forEach(r => {
+        if (r.river && !latest[r.river]) latest[r.river] = r;
+      });
+
+      const rivers = Object.values(latest).sort((a, b) => (b.ehi_score || 0) - (a.ehi_score || 0));
+
+      if (rivers.length === 0) {
+        document.getElementById('ehiGrid').innerHTML = '<div class="loading">EHI 데이터 없음 — ehi_scores 테이블 확인</div>';
+        return;
+      }
+
+      document.getElementById('ehiTime').textContent = `${rivers.length}개 하천`;
+
+      const gradeLabels = {A:'매우좋음', B:'좋음', C:'보통', D:'나쁨', E:'매우나쁨'};
+      let html = '';
+      rivers.forEach(r => {
+        const g = r.grade || '?';
+        const score = r.ehi_score || 0;
+        html += `<div class="ehi-card">
+          <div class="river-name">${esc(r.river)}</div>
+          <div class="grade grade-${g}">${g}</div>
+          <div class="score">${score.toFixed(1)}점 · ${esc(gradeLabels[g] || '')}</div>
+          <div class="bar bar-${g}"><div class="bar-fill" style="width:${score}%"></div></div>
+          <div class="score" style="margin-top:4px">종 ${r.species_count || 0}개</div>
+        </div>`;
+      });
+      document.getElementById('ehiGrid').innerHTML = html;
+    }
+
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadEHI()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;

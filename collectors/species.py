@@ -16,9 +16,20 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DORIMCHEON_LAT = 37.4838
-DORIMCHEON_LNG = 126.9295
 SEARCH_RADIUS_KM = 2
+
+RIVER_LOCATIONS = {
+    "도림천": {"lat": 37.4838, "lng": 126.9295},
+    "안양천": {"lat": 37.4750, "lng": 126.8870},
+    "중랑천": {"lat": 37.5950, "lng": 127.0500},
+    "탄천":   {"lat": 37.5050, "lng": 127.0780},
+    "불광천": {"lat": 37.5900, "lng": 126.9200},
+    "홍제천": {"lat": 37.5750, "lng": 126.9450},
+    "방학천": {"lat": 37.6550, "lng": 127.0280},
+    "우이천": {"lat": 37.6500, "lng": 127.0130},
+    "정릉천": {"lat": 37.6050, "lng": 127.0050},
+    "청계천": {"lat": 37.5700, "lng": 127.0100},
+}
 
 INVASIVE_SPECIES = {
     "Trachemys scripta",
@@ -78,7 +89,12 @@ def save_to_supabase(records):
         return 0
 
     url = f"{supabase_url}/rest/v1/species_observations"
-    payload = json.dumps(records).encode("utf-8")
+    clean_records = []
+    for r in records:
+        rec = dict(r)
+        rec.pop("inaturalist_id", None)
+        clean_records.append(rec)
+    payload = json.dumps(clean_records).encode("utf-8")
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("apikey", supabase_key)
     req.add_header("Authorization", f"Bearer {supabase_key}")
@@ -97,31 +113,43 @@ def save_to_supabase(records):
     return 0
 
 
-def main():
-    load_env()
-
-    print("=" * 60)
-    print("  도림천 생물 관찰 수집기 — RiverWatch Agent 1")
-    print(f"  위치: {DORIMCHEON_LAT}, {DORIMCHEON_LNG} (반경 {SEARCH_RADIUS_KM}km)")
-    print(f"  조회: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("=" * 60)
-
-    try:
-        data = fetch_observations(DORIMCHEON_LAT, DORIMCHEON_LNG, SEARCH_RADIUS_KM)
-    except Exception as e:
-        print(f"❌ iNaturalist API 호출 실패: {e}")
+def report_health(status, record_count=0, error_message=None):
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_KEY", "")
+    if not supabase_url or not supabase_key:
         return
+
+    record = {
+        "collector": "species",
+        "status": status,
+        "record_count": record_count,
+        "error_message": error_message,
+    }
+    url = f"{supabase_url}/rest/v1/collector_health"
+    payload = json.dumps(record).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("apikey", supabase_key)
+    req.add_header("Authorization", f"Bearer {supabase_key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "return=minimal")
+    try:
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
+
+
+def collect_river(river_name, lat, lng):
+    print(f"\n  --- {river_name} (반경 {SEARCH_RADIUS_KM}km) ---")
+    try:
+        data = fetch_observations(lat, lng, SEARCH_RADIUS_KM)
+    except Exception as e:
+        print(f"  API 호출 실패: {e}")
+        return []
 
     results = data.get("results", [])
-    total = data.get("total_results", 0)
-    print(f"\n  총 {total}건 관찰 (최근 30일, 최대 50건 표시)\n")
-
     if not results:
-        print("  관찰 데이터 없음")
-        return
-
-    print(f"  {'종명':<28} {'일반명':<16} {'관찰일':<12} {'외래종':<6} {'품질'}")
-    print("  " + "-" * 76)
+        print(f"  관찰 데이터 없음")
+        return []
 
     db_records = []
     invasive_count = 0
@@ -131,10 +159,9 @@ def main():
         species_name = taxon.get("name", "미확인")
         common = taxon.get("preferred_common_name", "")
         taxon_id = taxon.get("id")
-        lat = obs.get("geojson", {}).get("coordinates", [0, 0])[1] if obs.get("geojson") else None
-        lng = obs.get("geojson", {}).get("coordinates", [0, 0])[0] if obs.get("geojson") else None
+        obs_lat = obs.get("geojson", {}).get("coordinates", [0, 0])[1] if obs.get("geojson") else None
+        obs_lng = obs.get("geojson", {}).get("coordinates", [0, 0])[0] if obs.get("geojson") else None
         observed = obs.get("observed_on", "")
-        quality = obs.get("quality_grade", "")
         photos = obs.get("photos", [])
         photo_url = photos[0].get("url", "").replace("square", "medium") if photos else ""
         observer = obs.get("user", {}).get("login", "")
@@ -142,9 +169,6 @@ def main():
         is_invasive = species_name in INVASIVE_SPECIES
         if is_invasive:
             invasive_count += 1
-
-        invasive_mark = "\U0001f6a8" if is_invasive else ""
-        print(f"  {species_name:<28} {common:<16} {observed:<12} {invasive_mark:<6} {quality}")
 
         observed_at = None
         if observed:
@@ -154,12 +178,13 @@ def main():
                 observed_at = observed
 
         db_records.append({
+            "inaturalist_id": obs.get("id"),
             "taxon_name": species_name,
             "common_name": common,
             "taxon_id": taxon_id,
-            "latitude": lat,
-            "longitude": lng,
-            "river": "도림천",
+            "latitude": obs_lat,
+            "longitude": obs_lng,
+            "river": river_name,
             "photo_url": photo_url,
             "observer": observer,
             "source": "inaturalist",
@@ -167,15 +192,38 @@ def main():
             "observed_at": observed_at,
         })
 
-    print(f"\n  총 관찰: {len(results)}건")
-    if invasive_count > 0:
-        print(f"  \U0001f6a8 외래종 감지: {invasive_count}건 — 주의!")
-    else:
-        print("  ✅ 외래종 미감지")
+    print(f"  관찰 {len(results)}건 | 외래종 {invasive_count}건")
+    return db_records
 
-    saved = save_to_supabase(db_records)
+
+def main():
+    load_env()
+
+    print("=" * 60)
+    print("  서울 10개 하천 생물 관찰 수집기 — RiverWatch Agent 1")
+    print(f"  조회: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print("=" * 60)
+
+    all_records = []
+    for river_name, coords in RIVER_LOCATIONS.items():
+        records = collect_river(river_name, coords["lat"], coords["lng"])
+        all_records.extend(records)
+
+    if not all_records:
+        print("\n  전체 관찰 데이터 없음")
+        report_health("ok", record_count=0)
+        return
+
+    unique_species = set(r["taxon_name"] for r in all_records if r["taxon_name"] != "미확인")
+    invasive_total = sum(1 for r in all_records if r["is_invasive"])
+
+    print(f"\n  === 전체 요약 ===")
+    print(f"  총 관찰: {len(all_records)}건 | 고유 종: {len(unique_species)}종 | 외래종: {invasive_total}건")
+
+    saved = save_to_supabase(all_records)
     if saved:
-        print(f"  \U0001f4be Supabase 저장 완료: {saved}건")
+        print(f"  Supabase 저장 완료: {saved}건")
+    report_health("ok", record_count=saved)
     print()
 
 
