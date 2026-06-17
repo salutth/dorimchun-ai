@@ -1,0 +1,22 @@
+{
+  "name": "RiverWatch — 서울 하천 생태 대시보드",
+  "short_name": "RiverWatch",
+  "description": "서울 10개 하천의 수위·생태건강도를 실시간으로 모니터링하는 시민과학 AI 플랫폼",
+  "start_url": "/dashboard.html",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7873f5",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
