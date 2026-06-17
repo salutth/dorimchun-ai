@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 collector.log
 reports/
+node_modules/
+make_pptx.js
+*.pptx
+package.json
+package-lock.json
