@@ -85,7 +85,19 @@ create index idx_species_river on species_observations(river);
 create index idx_species_taxon on species_observations(taxon_name);
 create index idx_species_invasive on species_observations(is_invasive);
 
--- 6. 중복 방지 (V5 보안 패치)
+-- 6. 하천명 공백 정리 (기존 데이터)
+update river_readings set
+  station = trim(station),
+  river = trim(river),
+  gu = trim(gu)
+where station <> trim(station)
+   or river <> trim(river)
+   or gu <> trim(gu);
+
+update ehi_scores set river = trim(river)
+where river <> trim(river);
+
+-- 7. 중복 방지 (V5 보안 패치)
 alter table species_observations
   add column if not exists inaturalist_id bigint;
 create unique index if not exists uq_species_inat_id

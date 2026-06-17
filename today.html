@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:title" content="도림천 오늘의 생태">
+  <meta property="og:description" content="RiverWatch 일일 생태 현황 카드">
+  <title>RiverWatch — 오늘의 도림천</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Pretendard', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a1a 100%);
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header h1 span { color: #7873f5; }
+    header a { color: #666; text-decoration: none; font-size: 0.85rem; }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 1.2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card-wrapper {
+      width: 100%;
+      aspect-ratio: 1 / 1.3;
+      max-height: 520px;
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      width: 100%;
+    }
+    .actions button {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .actions button:hover { opacity: 0.85; }
+    .btn-share {
+      background: linear-gradient(135deg, #7873f5, #6560e0);
+      color: #fff;
+    }
+    .btn-save {
+      background: #1a1a28;
+      border: 1px solid #2a2a3a !important;
+      color: #e0e0e0;
+    }
+    .btn-report {
+      background: #2ecc7122;
+      border: 1px solid #2ecc7144 !important;
+      color: #2ecc71;
+    }
+
+    .date-label {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 0.8rem;
+      text-align: center;
+    }
+
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 400px;
+      color: #555;
+      font-size: 0.9rem;
+    }
+    .loading-screen .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #2a2a3a;
+      border-top-color: #7873f5;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>RiverWatch</span> 오늘의 카드</h1>
+    <a href="dashboard.html">대시보드</a>
+  </header>
+
+  <div class="container">
+    <div class="loading-screen" id="loading">
+      <div class="spinner"></div>
+      <div>오늘의 생태 카드를 만드는 중...</div>
+    </div>
+
+    <div class="card-wrapper" id="cardWrapper" style="display:none">
+      <canvas id="card" width="800" height="1040"></canvas>
+    </div>
+
+    <div class="actions" id="actions" style="display:none">
+      <button class="btn-save" onclick="saveCard()">💾 저장</button>
+      <button class="btn-share" onclick="shareCard()">📤 공유</button>
+      <button class="btn-report" onclick="location.href='report.html'">🔬 제보</button>
+    </div>
+
+    <div class="date-label" id="dateLabel"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gypkipqlkaeocrvzueek.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    };
+
+    async function query(table, params) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+      return res.json();
+    }
+
+    const gradeColor = { A: '#2ecc71', B: '#2ecc71', C: '#f39c12', D: '#e74c3c', E: '#e74c3c' };
+    const gradeLabel = { A: '매우좋음', B: '좋음', C: '보통', D: '나쁨', E: '매우나쁨' };
+    const statusIcon = { safe: '🟢', warning: '🟡', danger: '🔴' };
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    async function buildCard() {
+      const [readings, species, ehiRows] = await Promise.all([
+        query('river_readings', 'select=station,river,water_level,level_ratio,status,measured_at&river=eq.도림천&order=id.desc&limit=5'),
+        query('species_observations', 'select=taxon_name,common_name,is_invasive,observed_at,observer&river=eq.도림천&order=observed_at.desc&limit=30'),
+        query('ehi_scores', 'select=river,ehi_score,grade,species_count,calculated_at&river=eq.도림천&order=calculated_at.desc&limit=1'),
+      ]);
+
+      const ehi = ehiRows[0] || { ehi_score: 0, grade: '?', species_count: 0 };
+      const latestReading = readings[0] || {};
+      const uniqueSpecies = new Set(species.map(s => s.taxon_name).filter(Boolean));
+      const todaySpecies = species.filter(s => {
+        if (!s.observed_at) return false;
+        const d = new Date(s.observed_at);
+        const now = new Date();
+        return d.toDateString() === now.toDateString();
+      });
+      const invasiveCount = species.filter(s => s.is_invasive).length;
+
+      const canvas = document.getElementById('card');
+      const ctx = canvas.getContext('2d');
+      const W = 800, H = 1040;
+
+      // Background
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#0d1117');
+      bg.addColorStop(0.5, '#0a0f1a');
+      bg.addColorStop(1, '#0d1117');
+      ctx.fillStyle = bg;
+      roundRect(ctx, 0, 0, W, H, 24);
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = '#1e2a3a';
+      ctx.lineWidth = 2;
+      roundRect(ctx, 1, 1, W - 2, H - 2, 24);
+      ctx.stroke();
+
+      // Top accent line
+      const accent = ctx.createLinearGradient(60, 0, W - 60, 0);
+      accent.addColorStop(0, 'transparent');
+      accent.addColorStop(0.3, '#7873f5');
+      accent.addColorStop(0.7, '#7873f5');
+      accent.addColorStop(1, 'transparent');
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(60, 3);
+      ctx.lineTo(W - 60, 3);
+      ctx.stroke();
+
+      // Header
+      ctx.fillStyle = '#7873f5';
+      ctx.font = 'bold 18px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('RiverWatch', 50, 60);
+      ctx.fillStyle = '#555';
+      ctx.font = '16px -apple-system, Pretendard, sans-serif';
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()}.`;
+      ctx.fillText(dateStr, W - 50 - ctx.measureText(dateStr).width, 60);
+
+      // Title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('도림천 오늘의 생태', 50, 115);
+
+      ctx.fillStyle = '#666';
+      ctx.font = '16px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('서울 도림천 실시간 생태 현황 카드', 50, 145);
+
+      // Divider
+      ctx.strokeStyle = '#1a2030';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(50, 170); ctx.lineTo(W - 50, 170); ctx.stroke();
+
+      // EHI Score - big circle
+      const cx = 160, cy = 280, cr = 80;
+      const gc = gradeColor[ehi.grade] || '#666';
+
+      // Circle bg
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      ctx.fillStyle = gc + '15';
+      ctx.fill();
+      ctx.strokeStyle = gc + '44';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Score arc
+      const scoreRatio = Math.min((ehi.ehi_score || 0) / 100, 1);
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * scoreRatio);
+      ctx.strokeStyle = gc;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+
+      // Score text
+      ctx.fillStyle = gc;
+      ctx.font = 'bold 42px -apple-system, Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(ehi.grade || '?', cx, cy + 5);
+      ctx.font = '16px -apple-system, Pretendard, sans-serif';
+      ctx.fillText(`${(ehi.ehi_score || 0).toFixed(1)}점`, cx, cy + 30);
+      ctx.textAlign = 'left';
+
+      // EHI label
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('생태건강도 (EHI)', 280, 240);
+      ctx.fillStyle = gc;
+      ctx.font = '18px -apple-system, Pretendard, sans-serif';
+      ctx.fillText(gradeLabel[ehi.grade] || '측정중', 280, 268);
+
+      ctx.fillStyle = '#888';
+      ctx.font = '15px -apple-system, Pretendard, sans-serif';
+      ctx.fillText(`관찰 종 수: ${ehi.species_count || uniqueSpecies.size}종`, 280, 300);
+      ctx.fillText(`최근 30일 관찰: ${species.length}건`, 280, 324);
+
+      // Divider
+      ctx.strokeStyle = '#1a2030';
+      ctx.beginPath(); ctx.moveTo(50, 380); ctx.lineTo(W - 50, 380); ctx.stroke();
+
+      // Stats grid - 4 boxes
+      const stats = [
+        { label: '수위 상태', value: latestReading.status === 'safe' ? '안전' : latestReading.status === 'warning' ? '주의' : latestReading.status === 'danger' ? '위험' : '—', color: latestReading.status === 'safe' ? '#2ecc71' : latestReading.status === 'warning' ? '#f39c12' : '#e74c3c' },
+        { label: '수위 비율', value: latestReading.level_ratio ? `${latestReading.level_ratio}%` : '—', color: '#7873f5' },
+        { label: '관찰 종', value: `${uniqueSpecies.size}종`, color: '#3ECF8E' },
+        { label: '외래종', value: invasiveCount > 0 ? `${invasiveCount}건` : '없음', color: invasiveCount > 0 ? '#e74c3c' : '#2ecc71' },
+      ];
+
+      const boxW = 160, boxH = 110, startX = 50, startY = 410, gap = 14;
+      stats.forEach((s, i) => {
+        const x = startX + (boxW + gap) * (i % 4);
+        const y = startY;
+
+        roundRect(ctx, x, y, boxW, boxH, 12);
+        ctx.fillStyle = '#111822';
+        ctx.fill();
+        ctx.strokeStyle = '#1e2a3a';
+        ctx.lineWidth = 1;
+        roundRect(ctx, x, y, boxW, boxH, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#666';
+        ctx.font = '13px -apple-system, Pretendard, sans-serif';
+        ctx.fillText(s.label, x + 16, y + 30);
+
+        ctx.fillStyle = s.color;
+        ctx.font = 'bold 28px -apple-system, Pretendard, sans-serif';
+        ctx.fillText(s.value, x + 16, y + 72);
+      });
+
+      // Divider
+      ctx.strokeStyle = '#1a2030';
+      ctx.beginPath(); ctx.moveTo(50, 550); ctx.lineTo(W - 50, 550); ctx.stroke();
+
+      // Recent species list
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('최근 관찰 생물', 50, 590);
+
+      const recentSpecies = [];
+      const seenNames = new Set();
+      for (const s of species) {
+        const name = s.taxon_name || '';
+        if (name && !seenNames.has(name)) {
+          seenNames.add(name);
+          recentSpecies.push(s);
+          if (recentSpecies.length >= 6) break;
+        }
+      }
+
+      recentSpecies.forEach((s, i) => {
+        const y = 620 + i * 42;
+        const isInv = s.is_invasive;
+
+        ctx.fillStyle = isInv ? '#e74c3c11' : '#111822';
+        roundRect(ctx, 50, y, W - 100, 36, 8);
+        ctx.fill();
+
+        ctx.fillStyle = isInv ? '#e74c3c' : '#ccc';
+        ctx.font = '15px -apple-system, Pretendard, sans-serif';
+        ctx.fillText(s.taxon_name || '미확인', 70, y + 24);
+
+        if (s.common_name && s.common_name !== s.taxon_name) {
+          ctx.fillStyle = '#555';
+          ctx.font = '13px -apple-system, Pretendard, sans-serif';
+          const nameW = ctx.measureText(s.taxon_name || '미확인').width;
+          ctx.fillText(s.common_name, 80 + nameW, y + 24);
+        }
+
+        if (isInv) {
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = 'bold 11px -apple-system, Pretendard, sans-serif';
+          ctx.fillText('외래종', W - 110, y + 24);
+        }
+
+        ctx.fillStyle = '#444';
+        ctx.font = '12px -apple-system, Pretendard, sans-serif';
+        const dateText = s.observed_at ? new Date(s.observed_at).toLocaleDateString('ko-KR') : '';
+        ctx.textAlign = 'right';
+        ctx.fillText(isInv ? '' : dateText, W - 60, y + 24);
+        ctx.textAlign = 'left';
+      });
+
+      if (recentSpecies.length === 0) {
+        ctx.fillStyle = '#444';
+        ctx.font = '15px -apple-system, Pretendard, sans-serif';
+        ctx.fillText('아직 관찰 데이터가 없습니다', 50, 650);
+      }
+
+      // Footer
+      const footerY = H - 60;
+      ctx.strokeStyle = '#1a2030';
+      ctx.beginPath(); ctx.moveTo(50, footerY - 15); ctx.lineTo(W - 50, footerY - 15); ctx.stroke();
+
+      ctx.fillStyle = '#444';
+      ctx.font = '13px -apple-system, Pretendard, sans-serif';
+      ctx.fillText('RiverWatch — 도깨비3.0 시민과학 플랫폼', 50, footerY + 10);
+      ctx.textAlign = 'right';
+      ctx.fillText('sakyowon-ai.pages.dev', W - 50, footerY + 10);
+      ctx.textAlign = 'left';
+
+      // Show
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('cardWrapper').style.display = 'block';
+      document.getElementById('actions').style.display = 'flex';
+      document.getElementById('dateLabel').textContent =
+        `${now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'long' })} 기준`;
+    }
+
+    function saveCard() {
+      const canvas = document.getElementById('card');
+      const link = document.createElement('a');
+      link.download = `riverwatch-${new Date().toISOString().slice(0,10)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    async function shareCard() {
+      const canvas = document.getElementById('card');
+      try {
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        const file = new File([blob], 'riverwatch-today.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: '도림천 오늘의 생태',
+            text: 'RiverWatch 일일 생태 현황 카드',
+            files: [file],
+          });
+        } else {
+          saveCard();
+        }
+      } catch (e) {
+        saveCard();
+      }
+    }
+
+    buildCard().catch(err => {
+      document.getElementById('loading').innerHTML =
+        `<div style="color:#e74c3c">카드 생성 실패</div><div style="color:#555;margin-top:0.5rem;font-size:0.8rem">${err.message}</div>`;
+    });
+  </script>
+</body>
+</html>

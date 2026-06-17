@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>RiverWatch — 시민 제보</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Pretendard', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a1a 100%);
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header h1 span { color: #7873f5; }
+    header a { color: #666; text-decoration: none; font-size: 0.85rem; }
+
+    .container { max-width: 480px; margin: 0 auto; padding: 1.2rem; }
+
+    .hero {
+      text-align: center;
+      padding: 1.5rem 0 1rem;
+    }
+    .hero-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .hero h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .hero p { font-size: 0.8rem; color: #888; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #7873f5; }
+    textarea { resize: vertical; min-height: 70px; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
+
+    .photo-area {
+      background: #12121a;
+      border: 2px dashed #2a2a3a;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .photo-area:hover, .photo-area.active { border-color: #7873f5; }
+    .photo-area .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .photo-area p { font-size: 0.8rem; color: #666; }
+    .photo-area img {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .photo-area input { display: none; }
+
+    .location-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+    }
+    .location-bar .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #666;
+      flex-shrink: 0;
+    }
+    .location-bar .dot.active { background: #2ecc71; }
+    .location-bar .text { color: #888; flex: 1; }
+    .location-bar button {
+      background: none; border: none; color: #7873f5;
+      font-size: 0.8rem; cursor: pointer; font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #7873f5, #6560e0);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .result {
+      text-align: center;
+      padding: 2rem 1rem;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result .icon { font-size: 3rem; margin-bottom: 0.8rem; }
+    .result h3 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+    .result p { font-size: 0.8rem; color: #888; }
+    .result .again-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      background: #1a1a28;
+      border: 1px solid #2a2a3a;
+      color: #e0e0e0;
+      padding: 0.6rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .river-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .river-chips label {
+      display: inline-block;
+      padding: 0.4rem 0.8rem;
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 400;
+    }
+    .river-chips input { display: none; }
+    .river-chips input:checked + span {
+      background: #7873f522;
+      border-color: #7873f5;
+      color: #b8b0ff;
+    }
+    .river-chips label:has(input:checked) {
+      background: #7873f522;
+      border-color: #7873f5;
+      color: #b8b0ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>RiverWatch</span> 시민 제보</h1>
+    <a href="dashboard.html">대시보드</a>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <div class="hero-icon">🔬</div>
+      <h2>생물 관찰을 기록해주세요</h2>
+      <p>도림천과 서울 하천의 생태를 함께 지켜요</p>
+    </div>
+
+    <form id="reportForm">
+      <div class="form-group">
+        <label>📸 사진</label>
+        <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+          <div class="icon">📷</div>
+          <p>탭하여 사진 촬영 또는 선택</p>
+          <input type="file" id="photoInput" accept="image/*" capture="environment">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>🐾 어떤 생물을 발견했나요?</label>
+        <input type="text" id="speciesName" placeholder="예: 왜가리, 붉은귀거북, 돼지풀..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>🏞️ 하천 선택</label>
+        <div class="river-chips">
+          <label><input type="radio" name="river" value="도림천" checked><span>도림천</span></label>
+          <label><input type="radio" name="river" value="안양천"><span>안양천</span></label>
+          <label><input type="radio" name="river" value="중랑천"><span>중랑천</span></label>
+          <label><input type="radio" name="river" value="청계천"><span>청계천</span></label>
+          <label><input type="radio" name="river" value="탄천"><span>탄천</span></label>
+          <label><input type="radio" name="river" value="홍제천"><span>홍제천</span></label>
+          <label><input type="radio" name="river" value="불광천"><span>불광천</span></label>
+          <label><input type="radio" name="river" value="우이천"><span>우이천</span></label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📍 위치</label>
+        <div class="location-bar">
+          <div class="dot" id="gpsDot"></div>
+          <div class="text" id="gpsText">위치를 가져오는 중...</div>
+          <button type="button" onclick="getLocation()">새로고침</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📝 메모 (선택)</label>
+        <textarea id="memo" placeholder="추가 관찰 내용이 있으면 적어주세요"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>👤 관찰자 이름</label>
+        <input type="text" id="observer" placeholder="닉네임 또는 이름">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">제보하기</button>
+    </form>
+
+    <div class="result" id="resultPanel">
+      <div class="icon">🎉</div>
+      <h3>제보 완료!</h3>
+      <p id="resultText">도림천 생태 지도에 기록되었습니다.</p>
+      <a class="again-btn" href="report.html">한 건 더 제보하기</a>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gypkipqlkaeocrvzueek.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+
+    let currentLat = null, currentLng = null;
+
+    // GPS
+    function getLocation() {
+      const dot = document.getElementById('gpsDot');
+      const text = document.getElementById('gpsText');
+      dot.className = 'dot';
+      text.textContent = '위치를 가져오는 중...';
+
+      if (!navigator.geolocation) {
+        text.textContent = 'GPS를 지원하지 않는 브라우저입니다';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          currentLat = pos.coords.latitude;
+          currentLng = pos.coords.longitude;
+          dot.className = 'dot active';
+          text.textContent = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+        },
+        err => {
+          text.textContent = '위치 권한을 허용해주세요';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+    getLocation();
+
+    // Photo preview
+    document.getElementById('photoInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const area = document.getElementById('photoArea');
+      const existing = area.querySelector('img');
+      if (existing) existing.remove();
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      area.appendChild(img);
+      area.classList.add('active');
+    });
+
+    // Observer name persistence
+    const savedObserver = localStorage.getItem('rw_observer');
+    if (savedObserver) document.getElementById('observer').value = savedObserver;
+
+    // Submit
+    document.getElementById('reportForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = '제보 중...';
+
+      const species = document.getElementById('speciesName').value.trim();
+      const river = document.querySelector('input[name="river"]:checked')?.value || '도림천';
+      const observer = document.getElementById('observer').value.trim();
+      const memo = document.getElementById('memo').value.trim();
+
+      if (!species) {
+        alert('생물 이름을 입력해주세요');
+        btn.disabled = false;
+        btn.textContent = '제보하기';
+        return;
+      }
+
+      if (observer) localStorage.setItem('rw_observer', observer);
+
+      const record = {
+        taxon_name: species,
+        common_name: memo ? `${species} (${memo})` : species,
+        river: river,
+        latitude: currentLat,
+        longitude: currentLng,
+        observer: observer || '시민과학자',
+        source: 'citizen',
+        is_invasive: false,
+        observed_at: new Date().toISOString(),
+      };
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/species_observations`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify(record),
+        });
+
+        if (res.ok) {
+          document.getElementById('reportForm').style.display = 'none';
+          document.querySelector('.hero').style.display = 'none';
+          const result = document.getElementById('resultPanel');
+          result.classList.add('show');
+          document.getElementById('resultText').textContent =
+            `"${species}" 관찰이 ${river} 생태 지도에 기록되었습니다.`;
+        } else {
+          throw new Error(`${res.status}`);
+        }
+      } catch (err) {
+        alert('제보 실패: ' + err.message + '\n잠시 후 다시 시도해주세요.');
+        btn.disabled = false;
+        btn.textContent = '제보하기';
+      }
+    });
+  </script>
+</body>
+</html>

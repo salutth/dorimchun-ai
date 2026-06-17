@@ -223,6 +223,9 @@
   <header>
     <h1><span>RiverWatch</span> 서울 하천 생태 대시보드</h1>
     <div class="status-bar" id="statusBar">
+      <a href="report.html" class="badge safe" style="text-decoration:none">🔬 제보</a>
+      <a href="today.html" class="badge warning" style="text-decoration:none">📊 오늘</a>
+      <a href="mission.html" class="badge danger" style="text-decoration:none">🎯 미션</a>
       <span class="time-label" id="lastUpdate">로딩중...</span>
     </div>
   </header>
@@ -481,7 +484,8 @@
 
       const latest = {};
       rows.forEach(r => {
-        if (r.river && !latest[r.river]) latest[r.river] = r;
+        const river = (r.river || '').trim();
+        if (river && !latest[river]) latest[river] = {...r, river};
       });
 
       const rivers = Object.values(latest).sort((a, b) => (b.ehi_score || 0) - (a.ehi_score || 0));
@@ -509,8 +513,23 @@
       document.getElementById('ehiGrid').innerHTML = html;
     }
 
+    // --- HEALTH ---
+    async function loadHealth() {
+      try {
+        const rows = await query('collector_health',
+          'select=collector,status,collected_at&order=collected_at.desc&limit=5');
+        if (rows.length > 0) {
+          const latest = rows[0];
+          const t = new Date(latest.collected_at);
+          const timeStr = t.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+          const icon = latest.status === 'ok' ? '✅' : '❌';
+          document.getElementById('lastUpdate').textContent = `${icon} 수집: ${timeStr}`;
+        }
+      } catch (e) {}
+    }
+
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadEHI()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadEHI(), loadHealth()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
@@ -518,7 +537,7 @@
       .catch(err => console.error('Load error:', err));
 
     setInterval(() => {
-      Promise.all([loadMap(), loadTable(), loadSpecies()]);
+      Promise.all([loadMap(), loadTable(), loadSpecies(), loadEHI()]);
     }, 5 * 60 * 1000);
   </script>
 </body>

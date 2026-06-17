@@ -28,7 +28,7 @@ def load_env():
 
 
 def fetch_river_data(api_key):
-    url = f"http://openAPI.seoul.go.kr:8088/{api_key}/json/ListRiverStageService/1/100/"
+    url = f"https://openAPI.seoul.go.kr:8088/{api_key}/json/ListRiverStageService/1/100/"
     req = urllib.request.Request(url)
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read().decode("utf-8"))
@@ -68,7 +68,8 @@ def save_to_supabase(records):
     req.add_header("apikey", supabase_key)
     req.add_header("Authorization", f"Bearer {supabase_key}")
     req.add_header("Content-Type", "application/json")
-    req.add_header("Prefer", "return=minimal")
+    req.add_header("Prefer", "return=minimal,resolution=ignore-duplicates")
+    req.add_header("On-Conflict", "station,measured_at")
 
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -80,6 +81,31 @@ def save_to_supabase(records):
     except Exception as e:
         print(f"  [Supabase] 연결 실패: {e}")
     return 0
+
+
+def report_health(status, record_count=0, error_message=None):
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_KEY", "")
+    if not supabase_url or not supabase_key:
+        return
+
+    record = {
+        "collector": "river_monitor",
+        "status": status,
+        "record_count": record_count,
+        "error_message": error_message,
+    }
+    url = f"{supabase_url}/rest/v1/collector_health"
+    payload = json.dumps(record).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("apikey", supabase_key)
+    req.add_header("Authorization", f"Bearer {supabase_key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "return=minimal")
+    try:
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 
 def main():
@@ -98,6 +124,7 @@ def main():
         data = fetch_river_data(api_key)
     except Exception as e:
         print(f"❌ API 호출 실패: {e}")
+        report_health("error", error_message=str(e))
         return
 
     service = data.get("ListRiverStageService", {})
@@ -117,9 +144,9 @@ def main():
     db_records = []
 
     for r in rows:
-        name = r.get("WATG_NM", "")
-        river = r.get("RVR_NM", "")
-        gu = r.get("GU_OFC_NM", "")
+        name = r.get("WATG_NM", "").strip()
+        river = r.get("RVR_NM", "").strip()
+        gu = r.get("GU_OFC_NM", "").strip()
         level = r.get("RLTM_RVR_WATL_CNT", "0")
         embankment = r.get("EBM_HGT", "0")
         measure_time = r.get("DTRSM_DATA_CLCT_TM", "")
@@ -160,6 +187,7 @@ def main():
     saved = save_to_supabase(db_records)
     if saved:
         print(f"  \U0001f4be Supabase 저장 완료: {saved}건")
+    report_health("ok", record_count=saved)
     print()
 
 
