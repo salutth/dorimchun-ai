@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:title" content="도림천 오늘의 생태">
+  <meta property="og:title" content="서울 하천 오늘의 생태">
   <meta property="og:description" content="RiverWatch 일일 생태 현황 카드">
-  <title>RiverWatch — 오늘의 도림천</title>
+  <title>RiverWatch — 오늘의 하천</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -119,6 +119,19 @@
   </header>
 
   <div class="container">
+    <select id="riverSelect" style="width:100%;padding:0.6rem;margin-bottom:0.8rem;background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;font-size:0.85rem;font-family:inherit">
+      <option value="도림천">도림천</option><option value="안양천">안양천</option>
+      <option value="중랑천">중랑천</option><option value="청계천">청계천</option>
+      <option value="탄천">탄천</option><option value="홍제천">홍제천</option>
+      <option value="불광천">불광천</option><option value="우이천">우이천</option>
+      <option value="양재천">양재천</option><option value="성북천">성북천</option>
+      <option value="방학천">방학천</option><option value="정릉천">정릉천</option>
+      <option value="묵동천">묵동천</option><option value="전농천">전농천</option>
+      <option value="월계천">월계천</option><option value="반포천">반포천</option>
+      <option value="여의천">여의천</option><option value="봉원천">봉원천</option>
+      <option value="녹번천">녹번천</option><option value="세곡천">세곡천</option>
+      <option value="내부천">내부천</option>
+    </select>
     <div class="loading-screen" id="loading">
       <div class="spinner"></div>
       <div>오늘의 생태 카드를 만드는 중...</div>
@@ -170,10 +183,11 @@
     }
 
     async function buildCard() {
+      const selectedRiver = document.getElementById('riverSelect').value;
       const [readings, species, ehiRows] = await Promise.all([
-        query('river_readings', 'select=station,river,water_level,level_ratio,status,measured_at&river=eq.도림천&order=id.desc&limit=5'),
-        query('species_observations', 'select=taxon_name,common_name,is_invasive,observed_at,observer&river=eq.도림천&order=observed_at.desc&limit=30'),
-        query('ehi_scores', 'select=river,ehi_score,grade,species_count,calculated_at&river=eq.도림천&order=calculated_at.desc&limit=1'),
+        query('river_readings', `select=station,river,water_level,level_ratio,status,measured_at&river=eq.${encodeURIComponent(selectedRiver)}&order=id.desc&limit=5`),
+        query('species_observations', `select=taxon_name,common_name,is_invasive,observed_at,observer&river=eq.${encodeURIComponent(selectedRiver)}&order=observed_at.desc&limit=30`),
+        query('ehi_scores', `select=river,ehi_score,grade,species_count,calculated_at&river=eq.${encodeURIComponent(selectedRiver)}&order=calculated_at.desc&limit=1`),
       ]);
 
       const ehi = ehiRows[0] || { ehi_score: 0, grade: '?', species_count: 0 };
@@ -232,11 +246,11 @@
       // Title
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 36px -apple-system, Pretendard, sans-serif';
-      ctx.fillText('도림천 오늘의 생태', 50, 115);
+      ctx.fillText(`${selectedRiver} 오늘의 생태`, 50, 115);
 
       ctx.fillStyle = '#666';
       ctx.font = '16px -apple-system, Pretendard, sans-serif';
-      ctx.fillText('서울 도림천 실시간 생태 현황 카드', 50, 145);
+      ctx.fillText(`서울 ${selectedRiver} 실시간 생태 현황 카드`, 50, 145);
 
       // Divider
       ctx.strokeStyle = '#1a2030';
@@ -416,7 +430,7 @@
         const file = new File([blob], 'riverwatch-today.png', { type: 'image/png' });
         if (navigator.share && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: '도림천 오늘의 생태',
+            title: `${document.getElementById('riverSelect').value} 오늘의 생태`,
             text: 'RiverWatch 일일 생태 현황 카드',
             files: [file],
           });
@@ -427,6 +441,16 @@
         saveCard();
       }
     }
+
+    document.getElementById('riverSelect').addEventListener('change', () => {
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('cardWrapper').style.display = 'none';
+      document.getElementById('actions').style.display = 'none';
+      buildCard().catch(err => {
+        document.getElementById('loading').innerHTML =
+          `<div style="color:#e74c3c">카드 생성 실패</div><div style="color:#555;margin-top:0.5rem;font-size:0.8rem">${err.message}</div>`;
+      });
+    });
 
     buildCard().catch(err => {
       document.getElementById('loading').innerHTML =

@@ -195,6 +195,63 @@
     .bar-C .bar-fill { background: #f39c12; }
     .bar-D .bar-fill, .bar-E .bar-fill { background: #e74c3c; }
 
+    .invasive-section {
+      padding: 1rem;
+    }
+    .invasive-river-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.8rem;
+      padding: 1rem;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .invasive-river-card {
+      background: #1a1a28;
+      border-radius: 8px;
+      padding: 0.8rem;
+      border: 1px solid #2a2a3a;
+    }
+    .invasive-river-card .river-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: #e0e0e0;
+    }
+    .invasive-river-card .species-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    .invasive-pill {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .invasive-pill.plant { background: #e74c3c22; color: #e74c3c; border: 1px solid #e74c3c44; }
+    .invasive-pill.animal { background: #f39c1222; color: #f39c12; border: 1px solid #f39c1244; }
+    .invasive-pill.fish { background: #3498db22; color: #3498db; border: 1px solid #3498db44; }
+    .invasive-summary {
+      display: flex;
+      gap: 1.5rem;
+      padding: 0.8rem 1rem;
+      font-size: 0.82rem;
+      color: #999;
+      border-bottom: 1px solid #1a1a28;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .invasive-summary .stat { color: #e74c3c; font-weight: 700; font-size: 1.1rem; }
+    .naturing-link {
+      color: #7873f5;
+      text-decoration: none;
+      font-size: 0.75rem;
+      margin-left: auto;
+    }
+    .naturing-link:hover { text-decoration: underline; }
+
     .report-section { padding: 1rem; }
     .report-btn {
       display: inline-block;
@@ -258,18 +315,47 @@
 
     <div class="card">
       <div class="card-header">
-        도림천 수위 추이 (최근 기록)
+        <span id="chartRiverName">도림천</span> 수위 추이 (최근 기록)
+        <select id="riverSelect" style="background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:6px;padding:2px 6px;font-size:0.78rem;font-family:inherit">
+          <option value="도림천">도림천</option><option value="안양천">안양천</option>
+          <option value="중랑천">중랑천</option><option value="청계천">청계천</option>
+          <option value="탄천">탄천</option><option value="홍제천">홍제천</option>
+          <option value="불광천">불광천</option><option value="우이천">우이천</option>
+          <option value="양재천">양재천</option><option value="성북천">성북천</option>
+          <option value="방학천">방학천</option><option value="정릉천">정릉천</option>
+          <option value="묵동천">묵동천</option><option value="전농천">전농천</option>
+          <option value="월계천">월계천</option><option value="반포천">반포천</option>
+          <option value="여의천">여의천</option><option value="봉원천">봉원천</option>
+          <option value="녹번천">녹번천</option><option value="세곡천">세곡천</option>
+          <option value="내부천">내부천</option>
+        </select>
       </div>
       <div class="card-body"><div id="chart-container"><canvas id="chart"></canvas></div></div>
     </div>
 
     <div class="card">
       <div class="card-header">
-        도림천 생물 관찰 (최근 30일)
+        <span id="speciesRiverName">도림천</span> 생물 관찰 (최근 30일)
         <span class="time-label" id="speciesCount"></span>
       </div>
       <div class="card-body species-grid" id="speciesGrid">
         <div class="loading">데이터 로딩중...</div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        🚨 생태계교란종 모니터링 — 하천별 현황
+        <span class="time-label">네이처링 미션 #4330 참조</span>
+      </div>
+      <div class="invasive-summary">
+        <span>교란식물 <span class="stat" id="invasivePlantCount">-</span>종</span>
+        <span>교란동물 <span class="stat" id="invasiveAnimalCount">-</span>종</span>
+        <span>모니터링 하천 <span class="stat" id="invasiveRiverCount">-</span>개</span>
+        <a href="https://www.naturing.net/m/4330/summary" target="_blank" class="naturing-link">📋 네이처링 원본 데이터 →</a>
+      </div>
+      <div class="card-body invasive-river-grid" id="invasiveGrid">
+        <div class="loading">교란종 데이터 로딩중...</div>
       </div>
     </div>
 
@@ -399,9 +485,16 @@
     }
 
     // --- CHART ---
+    let chartInstance = null;
+    function getSelectedRiver() {
+      return document.getElementById('riverSelect').value;
+    }
     async function loadChart() {
+      const river = getSelectedRiver();
+      document.getElementById('chartRiverName').textContent = river;
+      document.getElementById('speciesRiverName').textContent = river;
       const rows = await query('river_readings',
-        'select=station,water_level,level_ratio,collected_at&river=eq.도림천&order=collected_at.asc&limit=100');
+        `select=station,water_level,level_ratio,collected_at&river=eq.${encodeURIComponent(river)}&order=collected_at.asc&limit=100`);
 
       const stations = {};
       rows.forEach(r => {
@@ -420,7 +513,8 @@
         pointRadius: 3,
       }));
 
-      new Chart(document.getElementById('chart'), {
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(document.getElementById('chart'), {
         type: 'line',
         data: { datasets },
         options: {
@@ -456,8 +550,9 @@
 
     // --- SPECIES ---
     async function loadSpecies() {
+      const river = getSelectedRiver();
       const rows = await query('species_observations',
-        'select=taxon_name,common_name,photo_url,observed_at,is_invasive,observer&river=eq.도림천&order=observed_at.desc&limit=20');
+        `select=taxon_name,common_name,photo_url,observed_at,is_invasive,observer&river=eq.${encodeURIComponent(river)}&order=observed_at.desc&limit=20`);
 
       document.getElementById('speciesCount').textContent = `${rows.length}종`;
 
@@ -520,6 +615,155 @@
       document.getElementById('ehiGrid').innerHTML = html;
     }
 
+    // --- INVASIVE SPECIES (네이처링 미션 #4330 참조) ---
+    function loadInvasive() {
+      const INVASIVE_DATA = {
+        '도림천': {
+          plants: ['가시박', '환삼덩굴', '단풍잎돼지풀', '미국쑥부쟁이'],
+          animals: ['붉은귀거북'],
+          fish: ['블루길']
+        },
+        '청계천': {
+          plants: ['환삼덩굴', '미국쑥부쟁이', '서양등골나물'],
+          animals: [],
+          fish: ['블루길', '큰입배스']
+        },
+        '탄천': {
+          plants: ['가시박', '단풍잎돼지풀', '돼지풀', '환삼덩굴'],
+          animals: ['황소개구리', '붉은귀거북'],
+          fish: ['블루길', '큰입배스']
+        },
+        '중랑천': {
+          plants: ['가시박', '환삼덩굴', '단풍잎돼지풀', '돼지풀', '미국쑥부쟁이'],
+          animals: ['붉은귀거북'],
+          fish: ['블루길', '큰입배스']
+        },
+        '양재천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀', '미국쑥부쟁이'],
+          animals: ['붉은귀거북'],
+          fish: ['블루길']
+        },
+        '불광천': {
+          plants: ['환삼덩굴', '돼지풀', '미국쑥부쟁이'],
+          animals: [],
+          fish: []
+        },
+        '홍제천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '안양천': {
+          plants: ['가시박', '환삼덩굴', '단풍잎돼지풀', '돼지풀'],
+          animals: ['붉은귀거북', '황소개구리'],
+          fish: ['블루길', '큰입배스']
+        },
+        '성북천': {
+          plants: ['환삼덩굴', '미국쑥부쟁이'],
+          animals: [],
+          fish: []
+        },
+        '방학천': {
+          plants: ['환삼덩굴', '돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '우이천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀', '미국쑥부쟁이'],
+          animals: [],
+          fish: ['블루길']
+        },
+        '정릉천': {
+          plants: ['환삼덩굴', '돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '묵동천': {
+          plants: ['환삼덩굴', '미국쑥부쟁이', '돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '전농천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '월계천': {
+          plants: ['환삼덩굴', '돼지풀', '미국쑥부쟁이'],
+          animals: [],
+          fish: ['블루길']
+        },
+        '반포천': {
+          plants: ['환삼덩굴', '미국쑥부쟁이'],
+          animals: [],
+          fish: []
+        },
+        '여의천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀', '돼지풀'],
+          animals: ['붉은귀거북'],
+          fish: ['블루길']
+        },
+        '봉원천': {
+          plants: ['환삼덩굴', '돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '녹번천': {
+          plants: ['환삼덩굴', '미국쑥부쟁이'],
+          animals: [],
+          fish: []
+        },
+        '세곡천': {
+          plants: ['환삼덩굴', '단풍잎돼지풀'],
+          animals: [],
+          fish: []
+        },
+        '내부천': {
+          plants: ['환삼덩굴', '돼지풀', '미국쑥부쟁이'],
+          animals: [],
+          fish: []
+        }
+      };
+
+      const allPlants = new Set();
+      const allAnimals = new Set();
+      Object.values(INVASIVE_DATA).forEach(d => {
+        d.plants.forEach(p => allPlants.add(p));
+        d.animals.forEach(a => allAnimals.add(a));
+        d.fish.forEach(f => allAnimals.add(f));
+      });
+
+      document.getElementById('invasivePlantCount').textContent = allPlants.size;
+      document.getElementById('invasiveAnimalCount').textContent = allAnimals.size;
+      document.getElementById('invasiveRiverCount').textContent = Object.keys(INVASIVE_DATA).length;
+
+      let html = '';
+      Object.entries(INVASIVE_DATA)
+        .sort((a, b) => {
+          const totalA = a[1].plants.length + a[1].animals.length + a[1].fish.length;
+          const totalB = b[1].plants.length + b[1].animals.length + b[1].fish.length;
+          return totalB - totalA;
+        })
+        .forEach(([river, data]) => {
+          const total = data.plants.length + data.animals.length + data.fish.length;
+          html += `<div class="invasive-river-card">
+            <div class="river-title">${esc(river)} <span style="color:#e74c3c;font-size:0.75rem">(${total}종)</span></div>
+            <div class="species-list">`;
+          data.plants.forEach(p => {
+            html += `<span class="invasive-pill plant">🌿 ${esc(p)}</span>`;
+          });
+          data.animals.forEach(a => {
+            html += `<span class="invasive-pill animal">🐢 ${esc(a)}</span>`;
+          });
+          data.fish.forEach(f => {
+            html += `<span class="invasive-pill fish">🐟 ${esc(f)}</span>`;
+          });
+          html += `</div></div>`;
+        });
+
+      document.getElementById('invasiveGrid').innerHTML = html;
+    }
+
     // --- HEALTH ---
     async function loadHealth() {
       try {
@@ -535,8 +779,14 @@
       } catch (e) {}
     }
 
+    // --- RIVER SELECT ---
+    document.getElementById('riverSelect').addEventListener('change', () => {
+      loadChart();
+      loadSpecies();
+    });
+
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadEHI(), loadHealth()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
@@ -544,7 +794,7 @@
       .catch(err => console.error('Load error:', err));
 
     setInterval(() => {
-      Promise.all([loadMap(), loadTable(), loadSpecies(), loadEHI()]);
+      Promise.all([loadMap(), loadTable(), loadSpecies(), loadInvasive(), loadEHI()]);
     }, 5 * 60 * 1000);
 
     if ('serviceWorker' in navigator) {

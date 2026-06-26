@@ -320,7 +320,7 @@
       const targetCount = 10;
 
       const species = await query('species_observations',
-        'select=taxon_name,common_name,observer,observed_at,is_invasive&river=eq.도림천&order=observed_at.desc&limit=200');
+        'select=taxon_name,common_name,observer,observed_at,is_invasive&order=observed_at.desc&limit=500');
 
       const recentSpecies = new Map();
       species.forEach(s => {

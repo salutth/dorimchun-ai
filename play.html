@@ -263,7 +263,7 @@
     <div class="start-screen" id="startScreen">
       <div class="logo">🐟</div>
       <h1>서울 하천<br><span>생물 퀴즈</span></h1>
-      <p>사진 속 생물은 어느 하천에서 발견됐을까요?<br>서울 10개 하천, 120종의 생물 데이터로 만든 퀴즈!</p>
+      <p>사진 속 생물은 어느 하천에서 발견됐을까요?<br>서울 21개 하천, 120종의 생물 데이터로 만든 퀴즈!</p>
       <button class="start-btn" onclick="startGame()">게임 시작</button>
       <div class="mode-select">
         <button class="mode-btn active" onclick="setMode(this,5)">5문제</button>
@@ -553,7 +553,7 @@
 
       let detail = `최대 연속 정답: ${maxStreak}회`;
       if (maxStreak >= 3) detail += ' 🔥';
-      detail += `\n서울 10개 하천에서 발견된 생물로 만든 퀴즈입니다.`;
+      detail += `\n서울 21개 하천에서 발견된 생물로 만든 퀴즈입니다.`;
       document.getElementById('resultDetail').textContent = detail;
 
       if (pct >= 0.8) bigConfetti();
