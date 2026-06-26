@@ -309,8 +309,8 @@
   </div>
 
   <script>
-    const SB = 'https://gypkipqlkaeocrvzueek.supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+    const SB = 'https://tpnikydhphhpwtksxanm.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
     const H = {'apikey':KEY,'Authorization':`Bearer ${KEY}`};
 
     let allSpecies = [];
@@ -331,7 +331,8 @@
 
     async function loadData() {
       const res = await fetch(`${SB}/rest/v1/species_observations?select=taxon_name,common_name,photo_url,river,observed_at&limit=500`, {headers:H});
-      const data = await res.json();
+      const raw = await res.json();
+      const data = Array.isArray(raw) ? raw : [];
       allSpecies = data.filter(s => s.photo_url && /^https?:\/\//.test(s.photo_url) && s.river);
       return allSpecies;
     }

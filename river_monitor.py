@@ -7,6 +7,7 @@
 
 import json
 import os
+import ssl
 import sys
 import urllib.request
 from datetime import datetime
@@ -28,9 +29,12 @@ def load_env():
 
 
 def fetch_river_data(api_key):
-    url = f"https://openAPI.seoul.go.kr:8088/{api_key}/json/ListRiverStageService/1/100/"
+    url = f"http://openAPI.seoul.go.kr:8088/{api_key}/json/ListRiverStageService/1/100/"
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url)
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 

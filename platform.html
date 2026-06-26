@@ -224,13 +224,14 @@
   </div>
 
   <script>
-    const SB='https://gypkipqlkaeocrvzueek.supabase.co';
-    const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+    const SB='https://tpnikydhphhpwtksxanm.supabase.co';
+    const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
     const H={'apikey':KEY,'Authorization':`Bearer ${KEY}`};
 
     fetch(`${SB}/rest/v1/species_observations?select=taxon_name&limit=500`,{headers:H})
       .then(r=>r.json())
       .then(data=>{
+        if(!Array.isArray(data)) return;
         const unique=new Set();
         data.forEach(s=>{if(s.taxon_name)unique.add(s.taxon_name)});
         if(unique.size>0) document.getElementById('dSpecies').textContent=unique.size;
@@ -239,6 +240,7 @@
     fetch(`${SB}/rest/v1/ehi_scores?select=river&limit=30`,{headers:H})
       .then(r=>r.json())
       .then(data=>{
+        if(!Array.isArray(data)) return;
         const rivers=new Set();
         data.forEach(e=>{const r=(e.river||'').trim();if(r)rivers.add(r)});
         if(rivers.size>0) document.getElementById('dRivers').textContent=rivers.size;

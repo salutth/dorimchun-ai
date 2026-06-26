@@ -371,8 +371,8 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://gypkipqlkaeocrvzueek.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGtpcHFsa2Flb2Nydnp1ZWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTMwNzYsImV4cCI6MjA5NjgyOTA3Nn0.LTtg6J9b8DjstP-vdbssdHsRb95OBSIaC1niW-RGqyM';
+    const SUPABASE_URL = 'https://tpnikydhphhpwtksxanm.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
 
     const headers = {
       'apikey': SUPABASE_KEY,
@@ -404,7 +404,8 @@
 
     async function query(table, params = '') {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     }
 
     // --- MAP ---
