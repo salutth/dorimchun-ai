@@ -300,10 +300,11 @@
       const nowHour = now.getHours();
       const todayStr = now.toISOString().slice(0, 10);
 
+      const nowHourStr = String(nowHour).padStart(2,'0') + ':00';
       const [assets, readings, weather] = await Promise.all([
-        query('cultural_assets', 'select=*&order=risk_priority.desc&limit=500'),
-        query('river_readings', 'select=*&order=measured_at.desc&limit=50'),
-        query('weather_forecasts', `select=river,forecast_hour,rain_probability,rain_amount,sky_status,forecast_date&forecast_date=eq.${todayStr}&order=forecast_hour.asc&limit=500`),
+        query('cultural_assets', 'select=name,grade,nearest_river,distance_km,latitude,longitude,risk_priority&order=risk_priority.desc&limit=500'),
+        query('river_readings', 'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=measured_at.desc&limit=50'),
+        query('weather_forecasts', `select=river,forecast_hour,rain_probability,rain_amount,sky_status&forecast_date=eq.${todayStr}&forecast_hour=gte.${nowHourStr}&order=forecast_hour.asc&limit=200`),
       ]);
 
       const weatherByRiver = {};
