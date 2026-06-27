@@ -583,7 +583,7 @@
     // --- EHI ---
     async function loadEHI() {
       const rows = await query('ehi_scores',
-        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&order=calculated_at.desc&limit=30');
+        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,created_at&order=created_at.desc&limit=30');
 
       const latest = {};
       rows.forEach(r => {
