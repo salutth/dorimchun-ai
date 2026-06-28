@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RiverWatch — 종합 분석 보고서</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Pretendard', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a1a 100%);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header h1 span { color: #7873f5; }
+    header a { color: #666; text-decoration: none; font-size: 0.85rem; }
+    header a:hover { color: #7873f5; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    .report-header {
+      text-align: center;
+      padding: 2rem 0 1.5rem;
+    }
+    .report-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .report-header .meta { font-size: 0.8rem; color: #888; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #7873f5;
+      line-height: 1.2;
+    }
+    .stat-card .label {
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+    .stat-card.alert .value { color: #f5734d; }
+    .stat-card.good .value { color: #2ecc71; }
+
+    .section {
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+    .section h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section h3 .icon { font-size: 1.2rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      background: #1a1a28;
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+      font-weight: 600;
+      color: #aaa;
+      border-bottom: 1px solid #2a2a3a;
+    }
+    td {
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid #1a1a28;
+    }
+    tr:hover td { background: #1a1a2a; }
+
+    .grade-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .grade-A, .grade-B { background: #2ecc7133; color: #2ecc71; }
+    .grade-C { background: #f39c1233; color: #f39c12; }
+    .grade-D, .grade-E { background: #e74c3c33; color: #e74c3c; }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin: 1rem 0;
+    }
+
+    .rec-list { list-style: none; }
+    .rec-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      padding: 0.8rem;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .rec-item.urgent { background: #e74c3c15; border-left: 3px solid #e74c3c; }
+    .rec-item.warning { background: #f39c1215; border-left: 3px solid #f39c12; }
+    .rec-item.ok { background: #2ecc7115; border-left: 3px solid #2ecc71; }
+    .rec-priority {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .rec-priority.urgent { background: #e74c3c33; color: #e74c3c; }
+    .rec-priority.warning { background: #f39c1233; color: #f39c12; }
+    .rec-priority.ok { background: #2ecc7133; color: #2ecc71; }
+
+    .top-species {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+    }
+    .species-chip {
+      background: #1a1a28;
+      border: 1px solid #2a2a3a;
+      border-radius: 20px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.75rem;
+    }
+    .species-chip .count { color: #7873f5; font-weight: 700; margin-left: 0.3rem; }
+
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .loading .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #222;
+      border-top-color: #7873f5;
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: #555;
+      font-size: 0.75rem;
+    }
+
+    .overflow-x { overflow-x: auto; }
+
+    @media (max-width: 600px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .chart-container { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>RiverWatch</span> 분석 보고서</h1>
+    <a href="/dashboard">대시보드</a>
+  </header>
+
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      보고서 데이터를 불러오는 중...
+    </div>
+
+    <div id="reportContent" style="display:none">
+      <div class="report-header">
+        <h2 id="reportTitle"></h2>
+        <div class="meta" id="reportMeta"></div>
+      </div>
+
+      <div class="summary-grid" id="summaryGrid"></div>
+
+      <div class="section" id="recSection">
+        <h3><span class="icon">📋</span> 정책 제언</h3>
+        <ul class="rec-list" id="recList"></ul>
+      </div>
+
+      <div class="section">
+        <h3><span class="icon">🌿</span> 생태건강지수 (EHI)</h3>
+        <div class="chart-container"><canvas id="ehiChart"></canvas></div>
+        <div class="overflow-x"><table id="ehiTable"></table></div>
+      </div>
+
+      <div class="section">
+        <h3><span class="icon">💧</span> 수질 TMS</h3>
+        <div class="chart-container"><canvas id="wqChart"></canvas></div>
+        <div class="overflow-x"><table id="wqTable"></table></div>
+      </div>
+
+      <div class="section">
+        <h3><span class="icon">🐾</span> 생물다양성</h3>
+        <div class="chart-container"><canvas id="speciesChart"></canvas></div>
+        <div id="topSpecies"></div>
+      </div>
+
+      <div class="section" id="alertSection">
+        <h3><span class="icon">⚠️</span> 외래종 경보</h3>
+        <div class="overflow-x"><table id="alertTable"></table></div>
+      </div>
+
+      <div class="footer" id="reportFooter"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nsuefjoovtbxlohwnigq.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdWVmam9vdnRieGxvaHduaWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NjMzNjMsImV4cCI6MjA5ODEzOTM2M30.GPP9dc9aqyfTJQeQYwQ3ZqciwXKudizw5kgzCXW8SIg';
+
+    async function sbGet(table, params = '') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      return res.ok ? res.json() : [];
+    }
+
+    function gradeClass(g) {
+      if (g === 'A' || g === 'B') return 'grade-A';
+      if (g === 'C') return 'grade-C';
+      return 'grade-D';
+    }
+
+    async function loadReport() {
+      const [ehi, species, readings, wq, alerts] = await Promise.all([
+        sbGet('ehi_scores', 'select=*&order=created_at.desc&limit=100'),
+        sbGet('species_observations', 'select=taxon_name,river,is_invasive,observed_at,source&order=observed_at.desc&limit=1000'),
+        sbGet('river_readings', 'select=station,river,water_level,level_ratio,status&order=id.desc&limit=500'),
+        sbGet('water_quality', 'select=*&order=collected_at.desc&limit=500'),
+        sbGet('invasive_alerts', 'select=*&order=created_at.desc&limit=50'),
+      ]);
+
+      const now = new Date();
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+      document.getElementById('reportTitle').textContent = `서울 하천 생태 종합 분석 보고서 — ${monthStr}`;
+      document.getElementById('reportMeta').textContent = `${now.toLocaleString('ko-KR')} | RiverWatch Auto Report v2 자동 생성`;
+
+      const latestEhi = {};
+      ehi.forEach(e => { if (e.river && !latestEhi[e.river]) latestEhi[e.river] = e; });
+      const ehiScores = Object.values(latestEhi).map(e => e.ehi_score || 0);
+      const avgEhi = ehiScores.length ? (ehiScores.reduce((a,b) => a+b, 0) / ehiScores.length).toFixed(1) : 0;
+
+      const uniqueSpecies = new Set(species.filter(s => s.taxon_name).map(s => s.taxon_name));
+      const invasiveCount = species.filter(s => s.is_invasive).length;
+      const dangerCount = new Set(readings.filter(r => r.status === 'danger').map(r => r.station)).size;
+
+      const wqStations = {};
+      wq.forEach(r => { if (r.station_name) wqStations[r.station_name] = (wqStations[r.station_name] || []).concat(r); });
+      const allDO = wq.filter(r => r.dissolved_oxygen).map(r => parseFloat(r.dissolved_oxygen));
+      const avgDO = allDO.length ? (allDO.reduce((a,b) => a+b,0) / allDO.length).toFixed(1) : 'N/A';
+
+      const grid = document.getElementById('summaryGrid');
+      const stats = [
+        { value: Object.keys(latestEhi).length, label: '모니터링 하천', cls: '' },
+        { value: avgEhi, label: '평균 EHI', cls: avgEhi >= 60 ? 'good' : avgEhi >= 40 ? '' : 'alert' },
+        { value: uniqueSpecies.size, label: '관찰 종 수', cls: '' },
+        { value: species.length, label: '총 관찰 건수', cls: '' },
+        { value: invasiveCount, label: '외래종 감지', cls: invasiveCount > 0 ? 'alert' : 'good' },
+        { value: dangerCount, label: '위험 관측소', cls: dangerCount > 0 ? 'alert' : 'good' },
+        { value: Object.keys(wqStations).length, label: '수질 관측소', cls: '' },
+        { value: avgDO, label: '평균 DO (mg/L)', cls: '' },
+      ];
+      grid.innerHTML = stats.map(s =>
+        `<div class="stat-card ${s.cls}"><div class="value">${s.value}</div><div class="label">${s.label}</div></div>`
+      ).join('');
+
+      renderEHI(latestEhi);
+      renderWQ(wqStations);
+      renderSpecies(species);
+      renderAlerts(alerts);
+      renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO);
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('reportContent').style.display = 'block';
+      document.getElementById('reportFooter').textContent =
+        `이 보고서는 RiverWatch Auto Report v2에 의해 자동 생성되었습니다. | 도깨비3.0 팀 (AI활동가 1기)`;
+    }
+
+    function renderEHI(latestEhi) {
+      const rivers = Object.entries(latestEhi).sort((a,b) => (b[1].ehi_score||0) - (a[1].ehi_score||0));
+
+      const ctx = document.getElementById('ehiChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rivers.map(([r]) => r),
+          datasets: [{
+            label: 'EHI 점수',
+            data: rivers.map(([,e]) => e.ehi_score || 0),
+            backgroundColor: rivers.map(([,e]) => {
+              const g = e.grade;
+              if (g === 'A' || g === 'B') return '#2ecc7188';
+              if (g === 'C') return '#f39c1288';
+              return '#e74c3c88';
+            }),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 100, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+            x: { grid: { display: false }, ticks: { color: '#ccc', maxRotation: 45 } },
+          }
+        }
+      });
+
+      const tbl = document.getElementById('ehiTable');
+      tbl.innerHTML = `<thead><tr><th>하천</th><th>EHI</th><th>등급</th><th>생물다양성</th><th>수위안정</th><th>종수</th></tr></thead><tbody>`
+        + rivers.map(([r, e]) => `<tr>
+          <td>${r}</td>
+          <td>${(e.ehi_score||0).toFixed(1)}</td>
+          <td><span class="grade-badge ${gradeClass(e.grade)}">${e.grade||'?'}</span></td>
+          <td>${(e.biodiversity_score||0).toFixed(0)}</td>
+          <td>${(e.water_stability_score||0).toFixed(0)}</td>
+          <td>${e.species_count||0}</td>
+        </tr>`).join('') + '</tbody>';
+    }
+
+    function renderWQ(wqStations) {
+      const stations = Object.entries(wqStations).map(([name, records]) => {
+        const avg = (arr) => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : 'N/A';
+        const ph = records.filter(r=>r.ph).map(r=>parseFloat(r.ph));
+        const doV = records.filter(r=>r.dissolved_oxygen).map(r=>parseFloat(r.dissolved_oxygen));
+        const temp = records.filter(r=>r.water_temp).map(r=>parseFloat(r.water_temp));
+        return { name, count: records.length, ph: avg(ph), do: avg(doV), temp: avg(temp), doRaw: doV };
+      });
+
+      const ctx = document.getElementById('wqChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: stations.map(s => s.name),
+          datasets: [
+            { label: 'pH', data: stations.map(s => parseFloat(s.ph) || 0), backgroundColor: '#7873f588', borderRadius: 4 },
+            { label: 'DO', data: stations.map(s => parseFloat(s.do) || 0), backgroundColor: '#2ecc7188', borderRadius: 4 },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ccc' } } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+            x: { grid: { display: false }, ticks: { color: '#ccc' } },
+          }
+        }
+      });
+
+      const tbl = document.getElementById('wqTable');
+      tbl.innerHTML = `<thead><tr><th>관측소</th><th>측정수</th><th>pH</th><th>DO</th><th>수온</th></tr></thead><tbody>`
+        + stations.map(s => `<tr><td>${s.name}</td><td>${s.count}</td><td>${s.ph}</td><td>${s.do}</td><td>${s.temp}</td></tr>`).join('')
+        + '</tbody>';
+    }
+
+    function renderSpecies(species) {
+      const byRiver = {};
+      const speciesCount = {};
+      species.forEach(s => {
+        if (s.river) {
+          if (!byRiver[s.river]) byRiver[s.river] = new Set();
+          if (s.taxon_name) byRiver[s.river].add(s.taxon_name);
+        }
+        if (s.taxon_name) speciesCount[s.taxon_name] = (speciesCount[s.taxon_name] || 0) + 1;
+      });
+
+      const riverData = Object.entries(byRiver).map(([r, s]) => ({ river: r, count: s.size })).sort((a,b) => b.count - a.count).slice(0, 10);
+
+      const ctx = document.getElementById('speciesChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: riverData.map(d => d.river),
+          datasets: [{
+            label: '관찰 종 수',
+            data: riverData.map(d => d.count),
+            backgroundColor: '#7873f566',
+            borderColor: '#7873f5',
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+            y: { grid: { display: false }, ticks: { color: '#ccc' } },
+          }
+        }
+      });
+
+      const topSp = Object.entries(speciesCount).sort((a,b) => b[1] - a[1]).slice(0, 15);
+      document.getElementById('topSpecies').innerHTML = '<h4 style="font-size:0.85rem;margin:1rem 0 0.5rem;color:#aaa;">다빈도 관찰 종</h4>'
+        + '<div class="top-species">' + topSp.map(([name, cnt]) =>
+        `<span class="species-chip">${name}<span class="count">${cnt}</span></span>`
+      ).join('') + '</div>';
+    }
+
+    function renderAlerts(alerts) {
+      const tbl = document.getElementById('alertTable');
+      if (!alerts.length) {
+        tbl.innerHTML = '<p style="color:#888;font-size:0.85rem;">현재 외래종 경보 없음</p>';
+        return;
+      }
+      const levelKr = { critical: '긴급', warning: '주의', info: '관찰' };
+      tbl.innerHTML = `<thead><tr><th>종명</th><th>하천</th><th>경보</th><th>감지일</th></tr></thead><tbody>`
+        + alerts.slice(0,10).map(a => `<tr>
+          <td>${a.species_name||''}</td>
+          <td>${a.river||''}</td>
+          <td>${levelKr[a.alert_level]||'?'}</td>
+          <td>${(a.created_at||'').slice(0,10)}</td>
+        </tr>`).join('') + '</tbody>';
+    }
+
+    function renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO) {
+      const recs = [];
+      const ehi = parseFloat(avgEhi);
+
+      if (ehi < 40) recs.push({ p: 'urgent', text: `평균 EHI ${avgEhi}점 — 긴급 생태복원 사업 검토 필요` });
+      else if (ehi < 60) recs.push({ p: 'warning', text: `평균 EHI ${avgEhi}점 — 지속적 모니터링 강화 권고` });
+      else recs.push({ p: 'ok', text: `평균 EHI ${avgEhi}점 — 현행 관리 체계 유지` });
+
+      if (invasiveCount > 0) recs.push({ p: 'warning', text: `외래종 ${invasiveCount}건 감지 — 생태교란종 제거 작업 시행 필요` });
+
+      const lowDO = allDO.some(v => v < 5.0);
+      if (lowDO) recs.push({ p: 'urgent', text: '용존산소(DO) 5.0mg/L 미만 관측 — 수질 개선 조치 시급' });
+
+      if (dangerCount >= 3) recs.push({ p: 'urgent', text: `위험 관측소 ${dangerCount}개소 — 하천 범람 대비 점검 시급` });
+
+      if (!recs.length) recs.push({ p: 'ok', text: '전체적으로 양호한 상태, 정기 모니터링 유지 권고' });
+
+      const pLabel = { urgent: '긴급', warning: '주의', ok: '양호' };
+      document.getElementById('recList').innerHTML = recs.map(r =>
+        `<li class="rec-item ${r.p}">
+          <span class="rec-priority ${r.p}">${pLabel[r.p]}</span>
+          <span>${r.text}</span>
+        </li>`
+      ).join('');
+    }
+
+    loadReport();
+  </script>
+</body>
+</html>

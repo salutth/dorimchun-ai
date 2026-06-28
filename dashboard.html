@@ -290,6 +290,7 @@
       <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
       <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
       <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+      <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
       <span class="time-label" id="lastUpdate">로딩중...</span>
     </div>
   </header>
@@ -371,11 +372,161 @@
 
     <div class="card full-width">
       <div class="card-header">
-        💧 수질 TMS — 실시간 관측
-        <span class="time-label" id="wqTime"></span>
+        💧 수질 모니터링
+        <div style="display:flex;gap:0.3rem;align-items:center">
+          <button onclick="switchWqTab('tms')" id="wqTabTms" class="wq-tab active" style="background:#7873f5;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;font-family:inherit">TMS 관측</button>
+          <button onclick="switchWqTab('citizen')" id="wqTabCitizen" class="wq-tab" style="background:#1a1a28;color:#888;border:1px solid #2a2a3a;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;font-family:inherit">시민 측정</button>
+          <span class="time-label" id="wqTime" style="margin-left:0.5rem"></span>
+        </div>
       </div>
       <div class="card-body" id="wqGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.8rem;padding:1rem;">
         <div class="loading">수질 데이터 로딩중...</div>
+      </div>
+      <div class="card-body" id="wqCitizen" style="display:none;padding:1rem;">
+        <div style="max-width:640px;margin:0 auto">
+
+          <!-- 기본 정보 -->
+          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">
+            <select id="cwRiver" style="flex:1;min-width:120px;background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
+              <option value="">하천 선택</option>
+              <option>도림천</option><option>안양천</option><option>중랑천</option><option>청계천</option>
+              <option>탄천</option><option>홍제천</option><option>불광천</option><option>우이천</option>
+              <option>양재천</option><option>성북천</option><option>방학천</option><option>정릉천</option>
+              <option>묵동천</option><option>전농천</option><option>월계천</option><option>반포천</option>
+              <option>여의천</option><option>봉원천</option><option>녹번천</option><option>세곡천</option>
+              <option>내부천</option>
+            </select>
+            <input id="cwObserver" type="text" placeholder="측정자 이름" style="flex:1;min-width:100px;background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
+          </div>
+
+          <!-- 사진 + 위치 -->
+          <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap">
+            <div style="flex:1;min-width:180px">
+              <label style="font-size:0.72rem;color:#888;display:block;margin-bottom:0.3rem">📸 측정지 사진</label>
+              <div id="cwPhotoArea" onclick="document.getElementById('cwPhotoInput').click()" style="background:#12121a;border:2px dashed #2a2a3a;border-radius:10px;height:140px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color 0.2s">
+                <div id="cwPhotoPlaceholder" style="text-align:center;color:#555;font-size:0.8rem"><div style="font-size:2rem;margin-bottom:0.3rem">📷</div>탭하여 촬영/선택</div>
+                <img id="cwPhotoPreview" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:8px">
+                <input type="file" id="cwPhotoInput" accept="image/*" capture="environment" style="display:none">
+              </div>
+            </div>
+            <div style="flex:1;min-width:180px">
+              <label style="font-size:0.72rem;color:#888;display:block;margin-bottom:0.3rem">📍 측정 위치</label>
+              <div id="cwLocBox" style="background:#12121a;border:1px solid #2a2a3a;border-radius:10px;height:140px;position:relative;overflow:hidden">
+                <div id="cwMiniMap" style="width:100%;height:100%"></div>
+                <div id="cwLocOverlay" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,#12121aee);padding:0.4rem 0.6rem;font-size:0.72rem">
+                  <div id="cwLocText" style="color:#888">위치 가져오는 중...</div>
+                  <div id="cwWeatherText" style="color:#666;margin-top:0.15rem"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 수질 항목 (확장) -->
+          <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">수질 측정값</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.8rem">
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">pH (0~14)</label>
+              <input id="cwPh" type="number" step="0.1" min="0" max="14" placeholder="7.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">DO 용존산소 (mg/L)</label>
+              <input id="cwDo" type="number" step="0.1" min="0" max="20" placeholder="8.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">수온 (°C)</label>
+              <input id="cwTemp" type="number" step="0.1" min="0" max="45" placeholder="22.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">탁도 (NTU)</label>
+              <input id="cwTurb" type="number" step="0.1" min="0" placeholder="5.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">전기전도도 (µS/cm)</label>
+              <input id="cwEC" type="number" step="1" min="0" placeholder="350" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">BOD (mg/L)</label>
+              <input id="cwBod" type="number" step="0.1" min="0" placeholder="2.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">COD (mg/L)</label>
+              <input id="cwCod" type="number" step="0.1" min="0" placeholder="4.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">SS 부유물 (mg/L)</label>
+              <input id="cwSS" type="number" step="0.1" min="0" placeholder="10" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          </div>
+
+          <!-- 현장 관찰 -->
+          <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">현장 관찰</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem">
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">수색 (물 색깔)</label>
+              <select id="cwColor" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="투명">투명 (맑음)</option>
+                <option value="연녹">연녹색 (약간 녹조)</option>
+                <option value="녹색">녹색 (녹조 심각)</option>
+                <option value="황갈">황갈색 (토사 유입)</option>
+                <option value="흑색">흑색 (오염 심각)</option>
+                <option value="백탁">백탁 (공사 등)</option>
+              </select></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">냄새</label>
+              <select id="cwSmell" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="무취">무취</option>
+                <option value="풀냄새">풀냄새/흙냄새</option>
+                <option value="비린내">비린내 (녹조)</option>
+                <option value="하수">하수 냄새</option>
+                <option value="기름">기름/화학 냄새</option>
+                <option value="악취">강한 악취</option>
+              </select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem">
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">유속 (흐름)</label>
+              <select id="cwFlow" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="정체">정체 (거의 안 흐름)</option>
+                <option value="완류">완류 (느리게)</option>
+                <option value="보통">보통</option>
+                <option value="급류">급류 (빠르게)</option>
+              </select></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">쓰레기/부유물</label>
+              <select id="cwTrash" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="없음">없음 (깨끗)</option>
+                <option value="소량">소량</option>
+                <option value="보통">보통 (눈에 띔)</option>
+                <option value="심각">심각 (많음)</option>
+              </select></div>
+          </div>
+
+          <!-- 기상 환경 (자동 + 수동) -->
+          <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">기상 환경 <span id="cwWxAuto" style="font-size:0.65rem;color:#555;font-weight:400"></span></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.8rem">
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">날씨</label>
+              <select id="cwWeather" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="맑음">☀️ 맑음</option>
+                <option value="구름많음">⛅ 구름많음</option>
+                <option value="흐림">☁️ 흐림</option>
+                <option value="비">🌧️ 비</option>
+                <option value="소나기">⛈️ 소나기</option>
+                <option value="안개">🌫️ 안개</option>
+              </select></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">기온 (°C)</label>
+              <input id="cwAirTemp" type="number" step="0.1" placeholder="26" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">습도 (%)</label>
+              <input id="cwHumidity" type="number" step="1" min="0" max="100" placeholder="65" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+            <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">최근 강수</label>
+              <select id="cwRain" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+                <option value="">선택</option>
+                <option value="없음">없음</option>
+                <option value="12시간내">12시간 이내</option>
+                <option value="24시간내">24시간 이내</option>
+                <option value="48시간내">48시간 이내</option>
+                <option value="현재강수">현재 비/눈</option>
+              </select></div>
+          </div>
+
+          <div style="margin-bottom:1rem">
+            <label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">메모 (추가 관찰)</label>
+            <input id="cwMemo" type="text" placeholder="예: 상류 공사 중, 물고기 떼 관찰, 악취 심함" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
+          </div>
+
+          <!-- 평가 결과 -->
+          <div id="cwResult" style="display:none;background:#1a1a28;border:1px solid #2a2a3a;border-radius:10px;padding:1rem;margin-bottom:1rem"></div>
+
+          <div style="display:flex;gap:0.5rem">
+            <button onclick="evaluateCitizen()" style="flex:1;background:linear-gradient(135deg,#7873f5,#6560e0);color:#fff;border:none;border-radius:10px;padding:0.7rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">평가하기</button>
+            <button onclick="submitCitizen()" id="cwSubmitBtn" style="flex:1;background:#1a1a28;color:#7873f5;border:1px solid #7873f5;border-radius:10px;padding:0.7rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;display:none">저장하기</button>
+          </div>
+          <div id="cwHistory" style="margin-top:1.2rem"></div>
+        </div>
       </div>
     </div>
 
@@ -924,6 +1075,357 @@
       loadChart();
       loadSpecies();
     });
+
+    // --- CITIZEN WATER QUALITY ---
+    let cwLat = null, cwLng = null, cwPhotoData = null, cwMiniMap = null, cwMarker = null;
+
+    function switchWqTab(tab) {
+      const tmsBtn = document.getElementById('wqTabTms');
+      const citBtn = document.getElementById('wqTabCitizen');
+      const tmsGrid = document.getElementById('wqGrid');
+      const citPanel = document.getElementById('wqCitizen');
+      if (tab === 'citizen') {
+        tmsGrid.style.display = 'none';
+        citPanel.style.display = 'block';
+        tmsBtn.style.background = '#1a1a28'; tmsBtn.style.color = '#888'; tmsBtn.style.border = '1px solid #2a2a3a';
+        citBtn.style.background = '#7873f5'; citBtn.style.color = '#fff'; citBtn.style.border = 'none';
+        initCitizenTab();
+      } else {
+        tmsGrid.style.display = 'grid';
+        citPanel.style.display = 'none';
+        tmsBtn.style.background = '#7873f5'; tmsBtn.style.color = '#fff'; tmsBtn.style.border = 'none';
+        citBtn.style.background = '#1a1a28'; citBtn.style.color = '#888'; citBtn.style.border = '1px solid #2a2a3a';
+      }
+    }
+
+    function initCitizenTab() {
+      if (!cwMiniMap) {
+        cwMiniMap = L.map('cwMiniMap', { zoomControl: false, attributionControl: false }).setView([37.54, 126.97], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(cwMiniMap);
+      }
+      cwGetLocation();
+      loadCitizenHistory();
+    }
+
+    function cwGetLocation() {
+      document.getElementById('cwLocText').textContent = '위치 가져오는 중...';
+      if (!navigator.geolocation) {
+        document.getElementById('cwLocText').textContent = 'GPS 미지원 브라우저';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos => {
+        cwLat = pos.coords.latitude;
+        cwLng = pos.coords.longitude;
+        document.getElementById('cwLocText').innerHTML = `<span style="color:#2ecc71">●</span> ${cwLat.toFixed(5)}, ${cwLng.toFixed(5)}`;
+        if (cwMiniMap) {
+          cwMiniMap.setView([cwLat, cwLng], 15);
+          if (cwMarker) cwMiniMap.removeLayer(cwMarker);
+          cwMarker = L.circleMarker([cwLat, cwLng], { radius: 7, fillColor: '#7873f5', color: '#7873f5', weight: 2, fillOpacity: 0.8 }).addTo(cwMiniMap);
+        }
+        cwFetchWeather(cwLat, cwLng);
+      }, () => {
+        document.getElementById('cwLocText').textContent = '위치 권한을 허용해주세요';
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    async function cwFetchWeather(lat, lng) {
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&timezone=Asia/Seoul`);
+        const data = await res.json();
+        const c = data.current;
+        if (!c) return;
+        const wxCodes = { 0:'맑음', 1:'대체로맑음', 2:'구름많음', 3:'흐림', 45:'안개', 48:'안개', 51:'이슬비', 53:'이슬비', 55:'이슬비', 61:'비', 63:'비', 65:'비', 71:'눈', 73:'눈', 75:'눈', 80:'소나기', 81:'소나기', 82:'소나기', 95:'뇌우', 96:'뇌우' };
+        const wxName = wxCodes[c.weather_code] || '정보없음';
+        const wxEmoji = c.weather_code === 0 ? '☀️' : c.weather_code <= 3 ? '⛅' : c.weather_code <= 48 ? '🌫️' : c.weather_code <= 55 ? '🌦️' : c.weather_code <= 65 ? '🌧️' : c.weather_code <= 75 ? '🌨️' : '⛈️';
+
+        document.getElementById('cwWeatherText').innerHTML =
+          `${wxEmoji} ${wxName} · ${c.temperature_2m}°C · 습도 ${c.relative_humidity_2m}% · 풍속 ${c.wind_speed_10m}km/h`;
+        document.getElementById('cwWxAuto').textContent = '(자동 감지)';
+
+        const wxSelect = document.getElementById('cwWeather');
+        if (!wxSelect.value) {
+          const map = { '맑음':'맑음', '대체로맑음':'맑음', '구름많음':'구름많음', '흐림':'흐림', '안개':'안개', '이슬비':'비', '비':'비', '소나기':'소나기', '뇌우':'소나기', '눈':'흐림' };
+          const mapped = map[wxName];
+          if (mapped) [...wxSelect.options].forEach(o => { if (o.value === mapped) o.selected = true; });
+        }
+        if (!document.getElementById('cwAirTemp').value) document.getElementById('cwAirTemp').value = c.temperature_2m;
+        if (!document.getElementById('cwHumidity').value) document.getElementById('cwHumidity').value = c.relative_humidity_2m;
+        if (c.precipitation > 0 && !document.getElementById('cwRain').value) document.getElementById('cwRain').value = '현재강수';
+      } catch (e) {
+        document.getElementById('cwWxAuto').textContent = '(자동 감지 실패 — 수동 입력)';
+      }
+    }
+
+    document.getElementById('cwPhotoInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById('cwPhotoPreview');
+      const placeholder = document.getElementById('cwPhotoPlaceholder');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+      document.getElementById('cwPhotoArea').style.borderColor = '#7873f5';
+
+      const reader = new FileReader();
+      reader.onload = () => { cwPhotoData = reader.result; };
+      reader.readAsDataURL(file);
+    });
+
+    function gradePh(v) {
+      if (v >= 6.5 && v <= 8.5) return { grade: '적정', color: '#2ecc71', desc: '정상 범위 (6.5~8.5)' };
+      if (v >= 6.0 && v < 6.5) return { grade: '약산성', color: '#f39c12', desc: '약간 산성 — 오염원 확인 필요' };
+      if (v > 8.5 && v <= 9.0) return { grade: '약알칼리', color: '#f39c12', desc: '약간 알칼리성 — 녹조 가능성' };
+      return { grade: '이상', color: '#e74c3c', desc: '정상범위 이탈 — 오염 의심' };
+    }
+    function gradeDo(v) {
+      if (v >= 7.5) return { grade: '매우좋음', color: '#2ecc71', desc: '수생생물 서식 최적' };
+      if (v >= 5.0) return { grade: '좋음', color: '#27ae60', desc: '대부분 수생생물 서식 가능' };
+      if (v >= 2.0) return { grade: '보통', color: '#f39c12', desc: '민감 종 서식 어려움' };
+      return { grade: '나쁨', color: '#e74c3c', desc: '수생생물 서식 곤란' };
+    }
+    function gradeTemp(v) {
+      if (v >= 15 && v <= 25) return { grade: '적정', color: '#2ecc71', desc: '수생생물 활동 적합' };
+      if (v >= 10 && v < 15) return { grade: '저온', color: '#3498db', desc: '저온 — 생물 활동 감소' };
+      if (v > 25 && v <= 30) return { grade: '고온주의', color: '#f39c12', desc: '고온 — DO 저하, 녹조 위험' };
+      if (v > 30) return { grade: '고온위험', color: '#e74c3c', desc: '위험 수온 — 생태계 스트레스' };
+      return { grade: '저온주의', color: '#3498db', desc: '매우 낮은 수온' };
+    }
+    function gradeTurb(v) {
+      if (v <= 5) return { grade: '맑음', color: '#2ecc71', desc: '투명한 수질' };
+      if (v <= 15) return { grade: '보통', color: '#f39c12', desc: '약간 탁함' };
+      if (v <= 30) return { grade: '탁함', color: '#e7711b', desc: '탁도 높음 — 토사 유입 의심' };
+      return { grade: '매우탁함', color: '#e74c3c', desc: '심각 — 오염 또는 강우 유출' };
+    }
+    function gradeBod(v) {
+      if (v <= 1) return { grade: '매우좋음', color: '#2ecc71', desc: 'Ia등급' };
+      if (v <= 2) return { grade: '좋음', color: '#27ae60', desc: 'Ib등급' };
+      if (v <= 3) return { grade: '약간좋음', color: '#82ca9d', desc: 'II등급' };
+      if (v <= 5) return { grade: '보통', color: '#f39c12', desc: 'III등급' };
+      if (v <= 8) return { grade: '약간나쁨', color: '#e7711b', desc: 'IV등급' };
+      if (v <= 10) return { grade: '나쁨', color: '#e74c3c', desc: 'V등급' };
+      return { grade: '매우나쁨', color: '#c0392b', desc: 'VI등급' };
+    }
+    function gradeCod(v) {
+      if (v <= 2) return { grade: '매우좋음', color: '#2ecc71', desc: 'Ia등급' };
+      if (v <= 4) return { grade: '좋음', color: '#27ae60', desc: 'Ib등급' };
+      if (v <= 5) return { grade: '약간좋음', color: '#82ca9d', desc: 'II등급' };
+      if (v <= 7) return { grade: '보통', color: '#f39c12', desc: 'III등급' };
+      if (v <= 9) return { grade: '약간나쁨', color: '#e7711b', desc: 'IV등급' };
+      return { grade: '나쁨', color: '#e74c3c', desc: 'V~VI등급' };
+    }
+    function gradeSS(v) {
+      if (v <= 25) return { grade: '좋음', color: '#2ecc71', desc: '정상 범위' };
+      if (v <= 50) return { grade: '보통', color: '#f39c12', desc: '약간 높음' };
+      if (v <= 100) return { grade: '나쁨', color: '#e7711b', desc: '높음 — 토사 유입' };
+      return { grade: '매우나쁨', color: '#e74c3c', desc: '심각' };
+    }
+    function gradeEC(v) {
+      if (v <= 300) return { grade: '좋음', color: '#2ecc71', desc: '청정 수질' };
+      if (v <= 500) return { grade: '보통', color: '#f39c12', desc: '일반 하천 수준' };
+      if (v <= 1000) return { grade: '높음', color: '#e7711b', desc: '오염 가능성' };
+      return { grade: '매우높음', color: '#e74c3c', desc: '심각한 오염' };
+    }
+    function gradeColor(v) {
+      const map = { '투명': { grade: '좋음', color: '#2ecc71' }, '연녹': { grade: '주의', color: '#f39c12' }, '녹색': { grade: '나쁨', color: '#e74c3c' }, '황갈': { grade: '나쁨', color: '#e7711b' }, '흑색': { grade: '위험', color: '#c0392b' }, '백탁': { grade: '주의', color: '#f39c12' } };
+      return map[v] || { grade: '-', color: '#888' };
+    }
+    function gradeSmell(v) {
+      const map = { '무취': { grade: '좋음', color: '#2ecc71' }, '풀냄새': { grade: '양호', color: '#27ae60' }, '비린내': { grade: '주의', color: '#f39c12' }, '하수': { grade: '나쁨', color: '#e7711b' }, '기름': { grade: '위험', color: '#e74c3c' }, '악취': { grade: '위험', color: '#c0392b' } };
+      return map[v] || { grade: '-', color: '#888' };
+    }
+
+    function evaluateCitizen() {
+      const vals = {
+        ph: parseFloat(document.getElementById('cwPh').value),
+        do: parseFloat(document.getElementById('cwDo').value),
+        temp: parseFloat(document.getElementById('cwTemp').value),
+        turb: parseFloat(document.getElementById('cwTurb').value),
+        ec: parseFloat(document.getElementById('cwEC').value),
+        bod: parseFloat(document.getElementById('cwBod').value),
+        cod: parseFloat(document.getElementById('cwCod').value),
+        ss: parseFloat(document.getElementById('cwSS').value),
+        color: document.getElementById('cwColor').value,
+        smell: document.getElementById('cwSmell').value,
+      };
+
+      const hasNum = !isNaN(vals.ph) || !isNaN(vals.do) || !isNaN(vals.temp) || !isNaN(vals.turb) || !isNaN(vals.ec) || !isNaN(vals.bod) || !isNaN(vals.cod) || !isNaN(vals.ss);
+      const hasObs = vals.color || vals.smell;
+      if (!hasNum && !hasObs) { alert('최소 1개 항목을 입력해주세요.'); return; }
+
+      const items = [];
+      let totalScore = 0, count = 0;
+
+      function add(label, value, gradeResult, scoreMap) {
+        items.push({ label, value, ...gradeResult });
+        totalScore += scoreMap[gradeResult.grade] || 50;
+        count++;
+      }
+      const numScores = { '매우좋음': 100, '좋음': 85, '약간좋음': 75, '적정': 100, '보통': 55, '약산성': 55, '약알칼리': 55, '맑음': 100, '고온주의': 45, '저온': 65, '저온주의': 35, '약간나쁨': 35, '탁함': 30, '높음': 30, '나쁨': 15, '매우나쁨': 5, '매우탁함': 10, '매우높음': 10, '이상': 15, '고온위험': 10 };
+      const obsScores = { '좋음': 100, '양호': 85, '주의': 50, '나쁨': 25, '위험': 10 };
+
+      if (!isNaN(vals.ph)) add('pH', vals.ph, gradePh(vals.ph), numScores);
+      if (!isNaN(vals.do)) add('DO', vals.do + ' mg/L', gradeDo(vals.do), numScores);
+      if (!isNaN(vals.temp)) add('수온', vals.temp + '°C', gradeTemp(vals.temp), numScores);
+      if (!isNaN(vals.turb)) add('탁도', vals.turb + ' NTU', gradeTurb(vals.turb), numScores);
+      if (!isNaN(vals.ec)) add('전기전도도', vals.ec + ' µS/cm', gradeEC(vals.ec), numScores);
+      if (!isNaN(vals.bod)) add('BOD', vals.bod + ' mg/L', gradeBod(vals.bod), numScores);
+      if (!isNaN(vals.cod)) add('COD', vals.cod + ' mg/L', gradeCod(vals.cod), numScores);
+      if (!isNaN(vals.ss)) add('SS', vals.ss + ' mg/L', gradeSS(vals.ss), numScores);
+      if (vals.color) add('수색', vals.color, gradeColor(vals.color), obsScores);
+      if (vals.smell) add('냄새', vals.smell, gradeSmell(vals.smell), obsScores);
+
+      const avg = count > 0 ? Math.round(totalScore / count) : 0;
+      const overallColor = avg >= 75 ? '#2ecc71' : avg >= 50 ? '#f39c12' : '#e74c3c';
+      const overallLabel = avg >= 80 ? '매우 양호' : avg >= 65 ? '양호' : avg >= 50 ? '보통' : avg >= 30 ? '나쁨' : '매우 나쁨';
+
+      let html = `<div style="text-align:center;margin-bottom:0.8rem">
+        <div style="font-size:2rem;font-weight:800;color:${overallColor}">${avg}<span style="font-size:0.9rem">점</span></div>
+        <div style="font-size:0.85rem;color:${overallColor};font-weight:600">${overallLabel}</div>
+      </div><div style="display:grid;gap:0.4rem">`;
+      items.forEach(it => {
+        html += `<div style="display:flex;align-items:center;gap:0.5rem;background:#12121a;border-radius:8px;padding:0.5rem 0.7rem">
+          <div style="min-width:56px;font-size:0.75rem;color:#aaa;font-weight:600">${it.label}</div>
+          <div style="font-size:0.95rem;font-weight:700;min-width:60px">${it.value}</div>
+          <div style="padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:700;background:${it.color}22;color:${it.color};white-space:nowrap">${it.grade}</div>
+          <div style="font-size:0.68rem;color:#777;flex:1">${it.desc || ''}</div>
+        </div>`;
+      });
+      html += '</div>';
+
+      const flow = document.getElementById('cwFlow').value;
+      const trash = document.getElementById('cwTrash').value;
+      const weather = document.getElementById('cwWeather').value;
+      const rain = document.getElementById('cwRain').value;
+      if (flow || trash || weather || rain) {
+        html += '<div style="margin-top:0.6rem;padding:0.5rem 0.7rem;background:#12121a;border-radius:8px;font-size:0.75rem;color:#999;display:flex;flex-wrap:wrap;gap:0.8rem">';
+        if (weather) html += `<span>🌤 ${weather}</span>`;
+        if (rain) html += `<span>🌧 ${rain}</span>`;
+        if (flow) html += `<span>🌊 ${flow}</span>`;
+        if (trash) html += `<span>🗑 쓰레기: ${trash}</span>`;
+        html += '</div>';
+      }
+
+      document.getElementById('cwResult').innerHTML = html;
+      document.getElementById('cwResult').style.display = 'block';
+      document.getElementById('cwSubmitBtn').style.display = 'block';
+    }
+
+    async function submitCitizen() {
+      const river = document.getElementById('cwRiver').value;
+      const observer = document.getElementById('cwObserver').value.trim();
+      if (!river) { alert('하천을 선택해주세요.'); return; }
+
+      const f = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? null : v; };
+      const s = id => document.getElementById(id).value || null;
+
+      const doVal = f('cwDo');
+      const doGrade = doVal !== null ? gradeDo(doVal).grade : null;
+
+      const record = {
+        river: river,
+        observer: observer || '시민과학자',
+        latitude: cwLat,
+        longitude: cwLng,
+        photo_data: cwPhotoData ? cwPhotoData.substring(0, 200000) : null,
+        ph: f('cwPh'),
+        dissolved_oxygen: doVal,
+        water_temp: f('cwTemp'),
+        turbidity: f('cwTurb'),
+        conductivity: f('cwEC'),
+        bod: f('cwBod'),
+        cod: f('cwCod'),
+        ss: f('cwSS'),
+        water_color: s('cwColor'),
+        smell: s('cwSmell'),
+        flow_speed: s('cwFlow'),
+        trash_level: s('cwTrash'),
+        weather: s('cwWeather'),
+        air_temp: f('cwAirTemp'),
+        humidity: f('cwHumidity'),
+        recent_rain: s('cwRain'),
+        do_grade: doGrade,
+        memo: s('cwMemo'),
+        measured_at: new Date().toISOString(),
+      };
+
+      const btn = document.getElementById('cwSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = '저장 중...';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/citizen_water_quality`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(record),
+        });
+        if (!res.ok) throw new Error(res.status);
+
+        if (observer) localStorage.setItem('rw_observer', observer);
+        btn.textContent = '저장 완료!';
+        btn.style.background = '#2ecc71'; btn.style.color = '#fff'; btn.style.borderColor = '#2ecc71';
+        setTimeout(() => {
+          btn.textContent = '저장하기'; btn.disabled = false;
+          btn.style.background = '#1a1a28'; btn.style.color = '#7873f5'; btn.style.borderColor = '#7873f5';
+          ['cwPh','cwDo','cwTemp','cwTurb','cwEC','cwBod','cwCod','cwSS','cwMemo','cwAirTemp','cwHumidity'].forEach(id => document.getElementById(id).value = '');
+          ['cwColor','cwSmell','cwFlow','cwTrash','cwWeather','cwRain'].forEach(id => document.getElementById(id).selectedIndex = 0);
+          document.getElementById('cwResult').style.display = 'none';
+          btn.style.display = 'none';
+          cwPhotoData = null;
+          document.getElementById('cwPhotoPreview').style.display = 'none';
+          document.getElementById('cwPhotoPlaceholder').style.display = 'block';
+          document.getElementById('cwPhotoArea').style.borderColor = '#2a2a3a';
+          loadCitizenHistory();
+        }, 1500);
+      } catch (e) {
+        alert('저장 실패: ' + e.message + '\n\nSupabase에 citizen_water_quality 테이블이 필요합니다.');
+        btn.textContent = '저장하기'; btn.disabled = false;
+      }
+    }
+
+    async function loadCitizenHistory() {
+      const rows = await query('citizen_water_quality',
+        'select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,weather,water_color,latitude,longitude,photo_data,measured_at&order=measured_at.desc&limit=10');
+
+      const el = document.getElementById('cwHistory');
+      if (!rows.length) {
+        el.innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:1rem">아직 시민 측정 기록이 없습니다</div>';
+        return;
+      }
+
+      let html = '<div style="font-size:0.82rem;font-weight:600;color:#aaa;margin-bottom:0.5rem">최근 시민 측정 기록</div>';
+      html += '<div style="display:grid;gap:0.5rem">';
+      rows.forEach(r => {
+        const t = r.measured_at ? new Date(r.measured_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+        const parts = [];
+        if (r.ph != null) parts.push(`pH ${r.ph}`);
+        if (r.dissolved_oxygen != null) parts.push(`DO ${r.dissolved_oxygen}`);
+        if (r.water_temp != null) parts.push(`${r.water_temp}°C`);
+        if (r.turbidity != null) parts.push(`탁도 ${r.turbidity}`);
+        const gc = r.do_grade === '매우좋음' || r.do_grade === '좋음' ? '#2ecc71' : r.do_grade === '보통' ? '#f39c12' : '#888';
+        const hasPhoto = r.photo_data ? '📷' : '';
+        const hasLoc = (r.latitude && r.longitude) ? '📍' : '';
+        const wxIcon = r.weather ? ({'맑음':'☀️','구름많음':'⛅','흐림':'☁️','비':'🌧️','소나기':'⛈️','안개':'🌫️'}[r.weather] || '') : '';
+
+        html += `<div style="background:#12121a;border-radius:10px;padding:0.6rem 0.8rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+            <span style="font-weight:700;font-size:0.85rem">${esc(r.river||'')}</span>
+            <span style="font-size:0.7rem;color:#555">${t}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;flex-wrap:wrap">
+            <span style="color:#999">${parts.join(' · ')}</span>
+            ${r.do_grade ? `<span style="color:${gc};font-weight:600">${esc(r.do_grade)}</span>` : ''}
+            ${r.water_color ? `<span style="color:#888">수색:${esc(r.water_color)}</span>` : ''}
+            <span style="color:#666">${wxIcon} ${hasPhoto} ${hasLoc}</span>
+          </div>
+          ${r.observer ? `<div style="font-size:0.68rem;color:#555;margin-top:0.2rem">by ${esc(r.observer)}</div>` : ''}
+        </div>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    const savedObs = localStorage.getItem('rw_observer');
+    if (savedObs) document.getElementById('cwObserver').value = savedObs;
 
     // --- INIT ---
     Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare()])
