@@ -1,0 +1,46 @@
+name: RiverWatch Data Collector
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 수위 모니터링
+        run: python river_monitor.py
+
+      - name: 생물 관찰 수집
+        run: python collectors/species.py
+
+      - name: EHI 생태건강지수
+        run: python collectors/ehi.py
+
+      - name: 외래종 경보
+        run: python collectors/invasive_alert.py
+
+      - name: 문화재 수집
+        run: python collectors/cultural_assets.py
+
+      - name: 기상 예보
+        run: python collectors/weather.py
+
+      - name: 침수 경보 + 텔레그램
+        run: python collectors/flood_alert.py
