@@ -25,9 +25,17 @@
     .nav-links { display: flex; gap: 1rem; }
     .nav-links a { color: #666; text-decoration: none; font-size: 0.82rem; }
 
-    .container { max-width: 520px; margin: 0 auto; padding: 1.2rem; }
+    .container { max-width: 540px; margin: 0 auto; padding: 1.2rem; }
 
-    /* Mission Banner */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .tab {
+      flex: 1; text-align: center; padding: 0.6rem; border-radius: 10px;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      background: #12121a; border: 1px solid #2a2a3a; color: #888;
+      transition: all 0.2s;
+    }
+    .tab.active { background: #7873f520; border-color: #7873f5; color: #7873f5; }
+
     .mission-banner {
       background: linear-gradient(135deg, #1a1040 0%, #12121a 100%);
       border: 1px solid #2a2050;
@@ -46,204 +54,152 @@
       background: radial-gradient(circle at 30% 40%, #7873f510 0%, transparent 50%);
     }
     .mission-banner .week {
-      font-size: 0.75rem;
-      color: #7873f5;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 0.5rem;
-      position: relative;
+      font-size: 0.75rem; color: #7873f5; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 0.5rem; position: relative;
     }
-    .mission-banner h2 {
-      font-size: 1.3rem;
-      font-weight: 800;
-      margin-bottom: 0.3rem;
-      position: relative;
-    }
-    .mission-banner .desc {
-      font-size: 0.82rem;
-      color: #888;
-      position: relative;
-    }
+    .mission-banner h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; position: relative; }
+    .mission-banner .desc { font-size: 0.82rem; color: #888; position: relative; }
 
-    /* Progress Ring */
-    .progress-section {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 14px;
-      padding: 1.2rem;
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;
       margin-bottom: 1rem;
     }
-    .ring-wrapper {
-      position: relative;
-      width: 90px;
-      height: 90px;
-      flex-shrink: 0;
+    .stat-card {
+      background: #12121a; border: 1px solid #2a2a3a; border-radius: 12px;
+      padding: 0.8rem; text-align: center;
     }
+    .stat-card .num { font-size: 1.5rem; font-weight: 800; color: #7873f5; }
+    .stat-card .label { font-size: 0.7rem; color: #666; margin-top: 2px; }
+
+    .progress-section {
+      display: flex; align-items: center; gap: 1.2rem;
+      background: #12121a; border: 1px solid #2a2a3a;
+      border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem;
+    }
+    .ring-wrapper { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
     .ring-wrapper svg { transform: rotate(-90deg); }
     .ring-bg { stroke: #1a1a28; }
     .ring-fill { stroke: #7873f5; transition: stroke-dashoffset 1s ease; stroke-linecap: round; }
     .ring-text {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); text-align: center;
     }
     .ring-text .num { font-size: 1.5rem; font-weight: 800; color: #7873f5; }
     .ring-text .label { font-size: 0.65rem; color: #666; }
     .progress-info h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
     .progress-info p { font-size: 0.78rem; color: #888; line-height: 1.5; }
 
-    /* Species checklist */
     .section-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #aaa;
+      font-size: 0.85rem; font-weight: 700; color: #aaa;
       margin: 1.2rem 0 0.6rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
+      display: flex; align-items: center; gap: 0.4rem;
     }
+
+    .mission-list { list-style: none; }
+    .mission-item {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.8rem; background: #12121a; border: 1px solid #2a2a3a;
+      border-radius: 10px; margin-bottom: 0.5rem; transition: all 0.2s;
+    }
+    .mission-item.completed { border-color: #2ecc7144; background: #2ecc7108; }
+    .mission-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .mission-info { flex: 1; }
+    .mission-name { font-size: 0.85rem; font-weight: 600; }
+    .mission-item.completed .mission-name { color: #2ecc71; }
+    .mission-desc { font-size: 0.72rem; color: #555; margin-top: 2px; }
+    .mission-reward {
+      font-size: 0.7rem; font-weight: 700; color: #f39c12;
+      background: #f39c1215; padding: 2px 8px; border-radius: 10px;
+    }
+    .mission-item.completed .mission-reward { color: #2ecc71; background: #2ecc7115; }
 
     .checklist { list-style: none; }
     .checklist li {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      padding: 0.7rem 0.8rem;
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-      transition: all 0.2s;
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.7rem 0.8rem; background: #12121a; border: 1px solid #2a2a3a;
+      border-radius: 10px; margin-bottom: 0.5rem; transition: all 0.2s;
     }
-    .checklist li.found {
-      border-color: #2ecc7144;
-      background: #2ecc7108;
-    }
+    .checklist li.found { border-color: #2ecc7144; background: #2ecc7108; }
     .checklist li .check {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid #2a2a3a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-size: 0.7rem;
-      color: transparent;
-      transition: all 0.3s;
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid #2a2a3a; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; font-size: 0.7rem;
+      color: transparent; transition: all 0.3s;
     }
-    .checklist li.found .check {
-      background: #2ecc71;
-      border-color: #2ecc71;
-      color: #fff;
-    }
+    .checklist li.found .check { background: #2ecc71; border-color: #2ecc71; color: #fff; }
     .checklist li .species-info { flex: 1; }
-    .checklist li .species-name {
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
+    .checklist li .species-name { font-size: 0.85rem; font-weight: 600; }
     .checklist li.found .species-name { color: #2ecc71; }
-    .checklist li .species-hint {
-      font-size: 0.72rem;
-      color: #555;
-      margin-top: 1px;
-    }
-    .checklist li.found .species-hint { color: #2ecc7188; }
+    .checklist li .species-hint { font-size: 0.72rem; color: #555; margin-top: 1px; }
     .checklist li .finder {
-      font-size: 0.7rem;
-      color: #7873f5;
-      background: #7873f515;
-      padding: 2px 8px;
-      border-radius: 10px;
+      font-size: 0.7rem; color: #7873f5;
+      background: #7873f515; padding: 2px 8px; border-radius: 10px;
     }
 
-    /* Leaderboard */
+    .badge-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
+    }
+    .badge-item {
+      text-align: center; padding: 0.8rem 0.3rem;
+      background: #12121a; border: 1px solid #2a2a3a; border-radius: 12px;
+    }
+    .badge-item.earned { border-color: #7873f544; background: #7873f508; }
+    .badge-item.locked { opacity: 0.4; }
+    .badge-emoji { font-size: 1.5rem; }
+    .badge-name { font-size: 0.65rem; color: #888; margin-top: 4px; }
+    .badge-item.earned .badge-name { color: #7873f5; }
+
     .leaderboard {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 14px;
-      overflow: hidden;
+      background: #12121a; border: 1px solid #2a2a3a;
+      border-radius: 14px; overflow: hidden;
     }
     .leaderboard .lb-header {
-      padding: 0.7rem 1rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      border-bottom: 1px solid #1a1a28;
-      color: #aaa;
+      padding: 0.7rem 1rem; font-size: 0.82rem; font-weight: 600;
+      border-bottom: 1px solid #1a1a28; color: #aaa;
     }
     .leaderboard .lb-row {
-      display: flex;
-      align-items: center;
-      padding: 0.6rem 1rem;
-      gap: 0.7rem;
+      display: flex; align-items: center;
+      padding: 0.6rem 1rem; gap: 0.7rem;
       border-bottom: 1px solid #0a0a0f;
     }
     .leaderboard .lb-row:last-child { border-bottom: none; }
     .lb-rank {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      flex-shrink: 0;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
     }
     .lb-rank.gold { background: #f39c1233; color: #f39c12; }
     .lb-rank.silver { background: #aaa3; color: #aaa; }
     .lb-rank.bronze { background: #cd7f3233; color: #cd7f32; }
     .lb-rank.normal { background: #1a1a28; color: #666; }
     .lb-name { flex: 1; font-size: 0.82rem; }
+    .lb-pts { font-size: 0.75rem; color: #f39c12; font-weight: 600; }
     .lb-count { font-size: 0.82rem; font-weight: 700; color: #7873f5; }
 
-    /* CTA */
     .cta-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #0a0a0fee;
-      border-top: 1px solid #222;
-      padding: 0.8rem 1.2rem;
-      display: flex;
-      gap: 0.6rem;
-      justify-content: center;
-      backdrop-filter: blur(10px);
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #0a0a0fee; border-top: 1px solid #222;
+      padding: 0.8rem 1.2rem; display: flex; gap: 0.6rem;
+      justify-content: center; backdrop-filter: blur(10px);
     }
     .cta-bar a {
-      flex: 1;
-      max-width: 240px;
-      text-align: center;
-      padding: 0.7rem;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: opacity 0.2s;
+      flex: 1; max-width: 240px; text-align: center;
+      padding: 0.7rem; border-radius: 12px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; transition: opacity 0.2s;
     }
     .cta-bar a:hover { opacity: 0.85; }
-    .cta-primary {
-      background: linear-gradient(135deg, #7873f5, #6560e0);
-      color: #fff;
-    }
-    .cta-secondary {
-      background: #1a1a28;
-      border: 1px solid #2a2a3a;
-      color: #e0e0e0;
-    }
+    .cta-primary { background: linear-gradient(135deg, #7873f5, #6560e0); color: #fff; }
+    .cta-secondary { background: #1a1a28; border: 1px solid #2a2a3a; color: #e0e0e0; }
 
     .spacer { height: 80px; }
-
-    .loading {
-      display: flex; align-items: center; justify-content: center;
-      height: 200px; color: #555;
-    }
+    .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: #555; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -255,8 +211,26 @@
     </div>
   </header>
 
-  <div class="container" id="content">
-    <div class="loading" id="loading">미션 데이터 로딩중...</div>
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-tab="missions">미션</div>
+      <div class="tab" data-tab="species">생물찾기</div>
+      <div class="tab" data-tab="badges">배지</div>
+      <div class="tab" data-tab="ranking">랭킹</div>
+    </div>
+
+    <div id="tab-missions" class="tab-content active">
+      <div class="loading" id="loading-missions">미션 데이터 로딩중...</div>
+    </div>
+    <div id="tab-species" class="tab-content">
+      <div class="loading" id="loading-species">생물 데이터 로딩중...</div>
+    </div>
+    <div id="tab-badges" class="tab-content">
+      <div class="loading" id="loading-badges">배지 로딩중...</div>
+    </div>
+    <div id="tab-ranking" class="tab-content">
+      <div class="loading" id="loading-ranking">랭킹 로딩중...</div>
+    </div>
   </div>
 
   <div class="cta-bar">
@@ -270,38 +244,32 @@
 
     async function query(table, params) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-        }
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
       });
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     }
 
-    function esc(s) {
-      const d = document.createElement('div');
-      d.textContent = s ?? '';
-      return d.innerHTML;
-    }
-
-    function getWeekNumber() {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), 0, 1);
-      const diff = now - start;
-      return Math.ceil((diff / 86400000 + start.getDay() + 1) / 7);
-    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 
     function getWeekRange() {
       const now = new Date();
       const day = now.getDay() || 7;
-      const mon = new Date(now);
-      mon.setDate(now.getDate() - day + 1);
-      const sun = new Date(mon);
-      sun.setDate(mon.getDate() + 6);
+      const mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
       const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
       return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
 
     const MISSION_TARGETS = [
       { name: '왜가리', hint: '하천변 큰 새, 회색빛 몸' },
@@ -316,79 +284,149 @@
       { name: '수달', hint: '매우 드묾! 목격 시 즉시 제보' },
     ];
 
-    async function buildMission() {
-      const weekNum = getWeekNumber();
-      const targetCount = 10;
+    const MISSIONS = [
+      { id: 'first_obs', icon: '🔬', name: '첫 관찰', desc: '생물 1종 이상 관찰하기', pts: 10, check: s => s.totalSpecies >= 1 },
+      { id: 'explorer', icon: '🗺️', name: '탐험가', desc: '3개 이상 하천 방문하기', pts: 30, check: s => s.rivers >= 3 },
+      { id: 'collector5', icon: '📸', name: '수집가', desc: '5종 이상 생물 관찰하기', pts: 50, check: s => s.totalSpecies >= 5 },
+      { id: 'collector20', icon: '🏅', name: '생태 전문가', desc: '20종 이상 생물 관찰하기', pts: 100, check: s => s.totalSpecies >= 20 },
+      { id: 'invasive', icon: '🚨', name: '교란종 감시단', desc: '생태교란종 1종 이상 발견하기', pts: 40, check: s => s.invasiveCount >= 1 },
+      { id: 'dorim_master', icon: '🌊', name: '도림천 마스터', desc: '도림천에서 10종 찾기', pts: 80, check: s => s.dorimSpecies >= 10 },
+      { id: 'water_check', icon: '💧', name: '수질 감시자', desc: '수질 데이터 확인하기 (대시보드 방문)', pts: 20, check: () => true },
+      { id: 'weekly', icon: '📅', name: '주간 미션', desc: '이번 주 관찰 체크리스트 5종 이상 발견', pts: 60, check: s => s.checklistFound >= 5 },
+    ];
 
-      const species = await query('species_observations',
-        'select=taxon_name,common_name,observer,observed_at,is_invasive&order=observed_at.desc&limit=500');
+    const BADGES = [
+      { emoji: '🌱', name: '새싹', desc: '첫 관찰', need: s => s.totalSpecies >= 1 },
+      { emoji: '🔍', name: '관찰자', desc: '5종 관찰', need: s => s.totalSpecies >= 5 },
+      { emoji: '🦅', name: '조류학자', desc: '새 3종 발견', need: s => s.birdCount >= 3 },
+      { emoji: '🐟', name: '어류학자', desc: '물고기 2종', need: s => s.fishCount >= 2 },
+      { emoji: '🗺️', name: '탐험가', desc: '3개 하천', need: s => s.rivers >= 3 },
+      { emoji: '🏆', name: '챔피언', desc: '50종 관찰', need: s => s.totalSpecies >= 50 },
+      { emoji: '🚨', name: '감시단', desc: '교란종 발견', need: s => s.invasiveCount >= 1 },
+      { emoji: '⭐', name: '전설', desc: '100종 관찰', need: s => s.totalSpecies >= 100 },
+    ];
 
-      const recentSpecies = new Map();
-      species.forEach(s => {
-        const name = (s.taxon_name || '').toLowerCase();
-        const common = (s.common_name || '').toLowerCase();
-        if (!recentSpecies.has(name)) {
-          recentSpecies.set(name, s);
-        }
-        if (common && !recentSpecies.has(common)) {
-          recentSpecies.set(common, s);
-        }
-      });
+    let speciesData = [];
+    let statsCache = {};
+
+    async function loadAllData() {
+      speciesData = await query('species_observations',
+        'select=taxon_name,common_name,observer,observed_at,is_invasive,river,image_url,inaturalist_id&order=observed_at.desc&limit=1000');
 
       const uniqueSpecies = new Set();
-      species.forEach(s => {
-        if (s.taxon_name) uniqueSpecies.add(s.taxon_name);
-      });
-      const foundCount = uniqueSpecies.size;
-      const progress = Math.min(foundCount / targetCount, 1);
+      const rivers = new Set();
+      const dorimSpecies = new Set();
+      let invasiveCount = 0;
+      let birdCount = 0, fishCount = 0;
+      const observerStats = {};
 
-      const observerCounts = {};
-      species.forEach(s => {
+      speciesData.forEach(s => {
+        if (s.taxon_name) uniqueSpecies.add(s.taxon_name);
+        if (s.river) rivers.add(s.river);
+        if (s.river && s.river.includes('도림') && s.taxon_name) dorimSpecies.add(s.taxon_name);
+        if (s.is_invasive) invasiveCount++;
+        const cn = (s.common_name || '').toLowerCase();
+        const tn = (s.taxon_name || '').toLowerCase();
+        if (cn.includes('새') || cn.includes('백로') || cn.includes('왜가리') || cn.includes('오리') || tn.includes('aves')) birdCount++;
+        if (cn.includes('물고기') || cn.includes('잉어') || cn.includes('붕어') || tn.includes('pisces')) fishCount++;
+
         const obs = s.observer || '익명';
-        observerCounts[obs] = (observerCounts[obs] || 0) + 1;
+        if (!observerStats[obs]) observerStats[obs] = { count: 0, species: new Set(), rivers: new Set() };
+        observerStats[obs].count++;
+        if (s.taxon_name) observerStats[obs].species.add(s.taxon_name);
+        if (s.river) observerStats[obs].rivers.add(s.river);
       });
-      const leaderboard = Object.entries(observerCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
+
+      const recentSpecies = new Map();
+      speciesData.forEach(s => {
+        const cn = (s.common_name || '').toLowerCase();
+        if (cn && !recentSpecies.has(cn)) recentSpecies.set(cn, s);
+        const tn = (s.taxon_name || '').toLowerCase();
+        if (tn && !recentSpecies.has(tn)) recentSpecies.set(tn, s);
+      });
 
       const checklist = MISSION_TARGETS.map(t => {
         let found = null;
         for (const [key, s] of recentSpecies) {
-          if (key.includes(t.name) || (s.common_name || '').includes(t.name) || t.name.includes(key)) {
-            found = s;
-            break;
-          }
+          if (key.includes(t.name) || t.name.includes(key)) { found = s; break; }
         }
         return { ...t, found };
       });
 
-      const foundMission = checklist.filter(c => c.found).length;
+      statsCache = {
+        totalSpecies: uniqueSpecies.size,
+        rivers: rivers.size,
+        invasiveCount,
+        dorimSpecies: dorimSpecies.size,
+        birdCount, fishCount,
+        totalObs: speciesData.length,
+        checklist,
+        checklistFound: checklist.filter(c => c.found).length,
+        observerStats,
+      };
+
+      buildMissions();
+      buildSpeciesTab();
+      buildBadges();
+      buildRanking();
+    }
+
+    function buildMissions() {
+      const s = statsCache;
+      const completedCount = MISSIONS.filter(m => m.check(s)).length;
+      const totalPts = MISSIONS.filter(m => m.check(s)).reduce((a, m) => a + m.pts, 0);
+
+      let html = `
+        <div class="mission-banner">
+          <div class="week">${getWeekRange()} · 시민과학 미션</div>
+          <h2>서울 하천 생태 탐험</h2>
+          <div class="desc">미션을 완료하고 포인트를 모으세요</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="num">${s.totalSpecies}</div><div class="label">관찰 종</div></div>
+          <div class="stat-card"><div class="num">${totalPts}</div><div class="label">포인트</div></div>
+          <div class="stat-card"><div class="num">${completedCount}/${MISSIONS.length}</div><div class="label">완료 미션</div></div>
+        </div>
+        <div class="section-title">🎯 미션 목록</div>
+        <div class="mission-list">`;
+
+      MISSIONS.forEach(m => {
+        const done = m.check(s);
+        html += `<div class="mission-item ${done ? 'completed' : ''}">
+          <div class="mission-icon" style="background:${done ? '#2ecc7120' : '#1a1a28'}">${m.icon}</div>
+          <div class="mission-info">
+            <div class="mission-name">${done ? '✓ ' : ''}${esc(m.name)}</div>
+            <div class="mission-desc">${esc(m.desc)}</div>
+          </div>
+          <div class="mission-reward">${done ? '완료' : `+${m.pts}pt`}</div>
+        </div>`;
+      });
+
+      html += '</div><div class="spacer"></div>';
+      document.getElementById('tab-missions').innerHTML = html;
+    }
+
+    function buildSpeciesTab() {
+      const s = statsCache;
+      const checklist = s.checklist;
+      const foundMission = s.checklistFound;
       const circumference = 2 * Math.PI * 38;
       const offset = circumference * (1 - foundMission / MISSION_TARGETS.length);
 
       let encouragement = '';
       if (foundMission === 0) encouragement = '첫 번째 생물을 찾아보세요!';
-      else if (foundMission < 3) encouragement = '좋은 시작이에요! 계속 탐험하세요';
-      else if (foundMission < 6) encouragement = '절반 가까이 왔어요! 대단해요';
-      else if (foundMission < 10) encouragement = '거의 다 찾았어요! 조금만 더!';
-      else encouragement = '🎉 미션 완료! 도림천 생태 전문가!';
+      else if (foundMission < 3) encouragement = '좋은 시작이에요!';
+      else if (foundMission < 6) encouragement = '절반 가까이 왔어요!';
+      else if (foundMission < 10) encouragement = '거의 다 찾았어요!';
+      else encouragement = '미션 완료! 생태 전문가!';
 
-      const rankClasses = ['gold', 'silver', 'bronze', 'normal', 'normal'];
-
-      document.getElementById('content').innerHTML = `
-        <div class="mission-banner">
-          <div class="week">${getWeekRange()} · WEEK ${weekNum}</div>
-          <h2>도림천에서 10종 찾기</h2>
-          <div class="desc">도림천을 산책하며 다양한 생물을 발견해보세요</div>
-        </div>
-
+      let html = `
         <div class="progress-section">
           <div class="ring-wrapper">
             <svg width="90" height="90" viewBox="0 0 90 90">
               <circle class="ring-bg" cx="45" cy="45" r="38" fill="none" stroke-width="6"/>
               <circle class="ring-fill" cx="45" cy="45" r="38" fill="none" stroke-width="6"
-                stroke-dasharray="${circumference}"
-                stroke-dashoffset="${offset}"/>
+                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
             </svg>
             <div class="ring-text">
               <div class="num">${foundMission}</div>
@@ -397,43 +435,86 @@
           </div>
           <div class="progress-info">
             <h3>${encouragement}</h3>
-            <p>전체 관찰 종: ${foundCount}종<br>이번 미션 달성: ${foundMission}/${MISSION_TARGETS.length}</p>
+            <p>전체 관찰 종: ${s.totalSpecies}종<br>체크리스트 달성: ${foundMission}/${MISSION_TARGETS.length}</p>
           </div>
         </div>
+        <div class="section-title">🎯 생물 체크리스트</div>
+        <ul class="checklist">`;
 
-        <div class="section-title">🎯 미션 체크리스트</div>
-        <ul class="checklist">
-          ${checklist.map(c => `
-            <li class="${c.found ? 'found' : ''}">
-              <div class="check">${c.found ? '✓' : ''}</div>
-              <div class="species-info">
-                <div class="species-name">${esc(c.name)}</div>
-                <div class="species-hint">${c.found ? `${esc(c.found.taxon_name)} 발견!` : esc(c.hint)}</div>
-              </div>
-              ${c.found && c.found.observer ? `<span class="finder">${esc(c.found.observer)}</span>` : ''}
-            </li>
-          `).join('')}
-        </ul>
+      checklist.forEach(c => {
+        html += `<li class="${c.found ? 'found' : ''}">
+          <div class="check">${c.found ? '✓' : ''}</div>
+          <div class="species-info">
+            <div class="species-name">${esc(c.name)}</div>
+            <div class="species-hint">${c.found ? `${esc(c.found.taxon_name)} 발견!` : esc(c.hint)}</div>
+          </div>
+          ${c.found && c.found.observer ? `<span class="finder">${esc(c.found.observer)}</span>` : ''}
+        </li>`;
+      });
 
-        <div class="section-title">🏆 이번 달 관찰왕</div>
+      html += '</ul><div class="spacer"></div>';
+      document.getElementById('tab-species').innerHTML = html;
+    }
+
+    function buildBadges() {
+      const s = statsCache;
+      const earnedCount = BADGES.filter(b => b.need(s)).length;
+
+      let html = `
+        <div class="mission-banner">
+          <div class="week">컬렉션</div>
+          <h2>획득 배지 ${earnedCount} / ${BADGES.length}</h2>
+          <div class="desc">다양한 활동으로 배지를 모으세요</div>
+        </div>
+        <div class="section-title">🏅 배지 컬렉션</div>
+        <div class="badge-grid">`;
+
+      BADGES.forEach(b => {
+        const earned = b.need(s);
+        html += `<div class="badge-item ${earned ? 'earned' : 'locked'}">
+          <div class="badge-emoji">${b.emoji}</div>
+          <div class="badge-name">${esc(b.name)}</div>
+          <div style="font-size:0.6rem;color:#555;margin-top:2px">${esc(b.desc)}</div>
+        </div>`;
+      });
+
+      html += '</div><div class="spacer"></div>';
+      document.getElementById('tab-badges').innerHTML = html;
+    }
+
+    function buildRanking() {
+      const s = statsCache;
+      const rankClasses = ['gold', 'silver', 'bronze', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'];
+
+      const leaderboard = Object.entries(s.observerStats)
+        .map(([name, data]) => ({ name, count: data.count, species: data.species.size, rivers: data.rivers.size }))
+        .sort((a, b) => b.species - a.species || b.count - a.count)
+        .slice(0, 10);
+
+      let html = `
+        <div class="mission-banner">
+          <div class="week">시민과학 랭킹</div>
+          <h2>이번 달 관찰왕</h2>
+          <div class="desc">관찰 종 수 기준 순위</div>
+        </div>
         <div class="leaderboard">
-          <div class="lb-header">도림천 관찰 횟수 순위</div>
+          <div class="lb-header">순위 · 관찰자 · 종 수 · 관찰 횟수</div>
           ${leaderboard.length === 0 ? '<div class="lb-row"><span style="color:#555">아직 관찰 데이터가 없습니다</span></div>' :
             leaderboard.map((entry, i) => `
               <div class="lb-row">
                 <div class="lb-rank ${rankClasses[i]}">${i + 1}</div>
-                <div class="lb-name">${esc(entry[0])}</div>
-                <div class="lb-count">${entry[1]}건</div>
-              </div>
-            `).join('')}
+                <div class="lb-name">${esc(entry.name)}</div>
+                <div class="lb-pts">${entry.species}종</div>
+                <div class="lb-count">${entry.count}건</div>
+              </div>`).join('')}
         </div>
+        <div class="spacer"></div>`;
 
-        <div class="spacer"></div>
-      `;
+      document.getElementById('tab-ranking').innerHTML = html;
     }
 
-    buildMission().catch(err => {
-      document.getElementById('loading').innerHTML =
+    loadAllData().catch(err => {
+      document.getElementById('loading-missions').innerHTML =
         `<div style="color:#e74c3c">로딩 실패: ${err.message}</div>`;
     });
   </script>

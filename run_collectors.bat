@@ -13,6 +13,7 @@ echo [%date% %time%] RiverWatch 데이터 수집 시작 >> "%PROJECT%\collector.
 "%PYTHON%" "%PROJECT%\collectors\cultural_assets.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\weather.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\flood_alert.py" >> "%PROJECT%\collector.log" 2>&1
+"%PYTHON%" "%PROJECT%\collectors\water_quality.py" >> "%PROJECT%\collector.log" 2>&1
 
 echo [%date% %time%] 수집 완료 >> "%PROJECT%\collector.log"
 echo. >> "%PROJECT%\collector.log"
