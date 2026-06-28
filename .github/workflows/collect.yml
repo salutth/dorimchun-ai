@@ -47,3 +47,6 @@ jobs:
 
       - name: 수질 TMS
         run: python collectors/water_quality.py
+
+      - name: 월간 분석 보고서
+        run: python collectors/policy_report.py
