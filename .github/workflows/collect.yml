@@ -44,3 +44,6 @@ jobs:
 
       - name: 침수 경보 + 텔레그램
         run: python collectors/flood_alert.py
+
+      - name: 수질 TMS
+        run: python collectors/water_quality.py
