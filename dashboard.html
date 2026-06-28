@@ -623,6 +623,11 @@
       });
 
       document.getElementById('statusBar').innerHTML = `
+        <a href="/report" class="badge safe" style="text-decoration:none">🔬 제보</a>
+        <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
+        <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
+        <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+        <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
         <span class="badge danger">${dangerN} 위험</span>
         <span class="badge warning">${warnN} 주의</span>
         <span class="badge safe">${safeN} 안전</span>
@@ -633,6 +638,32 @@
         document.getElementById('mapTime').textContent =
           t.toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
       }
+
+      // 시민 측정 마커
+      try {
+        const cwRows = await query('citizen_water_quality',
+          'select=river,observer,ph,dissolved_oxygen,water_temp,do_grade,water_color,weather,latitude,longitude,measured_at&order=measured_at.desc&limit=50');
+        cwRows.forEach(r => {
+          if (!r.latitude || !r.longitude) return;
+          const gc = r.do_grade === '매우좋음' || r.do_grade === '좋음' ? '#2ecc71' : r.do_grade === '보통' ? '#f39c12' : '#7873f5';
+          const marker = L.circleMarker([r.latitude, r.longitude], {
+            radius: 6, fillColor: '#7873f5', color: gc, weight: 2, fillOpacity: 0.9,
+          }).addTo(map);
+          const t = r.measured_at ? new Date(r.measured_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+          const parts = [];
+          if (r.ph != null) parts.push(`pH ${r.ph}`);
+          if (r.dissolved_oxygen != null) parts.push(`DO ${r.dissolved_oxygen}`);
+          if (r.water_temp != null) parts.push(`${r.water_temp}°C`);
+          marker.bindPopup(`
+            <b>💧 시민측정</b> — ${esc(r.river||'')}<br>
+            ${parts.join(' · ')}<br>
+            ${r.do_grade ? `등급: <b>${esc(r.do_grade)}</b>` : ''}
+            ${r.water_color ? ` · 수색: ${esc(r.water_color)}` : ''}
+            ${r.weather ? ` · ${esc(r.weather)}` : ''}<br>
+            <span style="color:#999">${esc(r.observer||'')} · ${t}</span>
+          `);
+        });
+      } catch (e) {}
     }
 
     // --- TABLE ---

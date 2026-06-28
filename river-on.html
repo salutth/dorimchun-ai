@@ -142,6 +142,12 @@
       font-size: 1rem;
       color: #888;
     }
+
+    @keyframes pulse-danger {
+      0%, 100% { box-shadow: 0 0 6px #ff475788; transform: scale(1); }
+      50% { box-shadow: 0 0 18px #ff4757cc; transform: scale(1.4); }
+    }
+    .pulse-marker { animation: pulse-danger 1.5s ease-in-out infinite; }
   </style>
 </head>
 <body>
@@ -180,8 +186,18 @@
     <div class="stat-card"><div class="num total" id="sTotalAssets">-</div><div class="label">수변 문화재</div></div>
     <div class="stat-card"><div class="num danger" id="sDanger">-</div><div class="label">위험 관측소</div></div>
     <div class="stat-card"><div class="num warning" id="sWarning">-</div><div class="label">주의 관측소</div></div>
+    <div class="stat-card"><div class="num safe" id="sSafe">-</div><div class="label">안전 관측소</div></div>
     <div class="stat-card"><div class="num heritage" id="sHighRisk">-</div><div class="label">고위험 문화재</div></div>
     <div class="stat-card"><div class="num" id="sRainMax" style="color:#5bc0de">-</div><div class="label">최대 강수확률</div></div>
+    <div class="stat-card"><div class="num" id="sFloodRisk" style="color:#888">-</div><div class="label">침수위험도</div></div>
+  </div>
+
+  <div id="alertPanel" style="display:none;position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:1001;max-width:480px;width:90%">
+    <div style="background:rgba(255,71,87,0.95);border-radius:12px;padding:0.8rem 1rem;color:#fff;font-size:0.82rem;box-shadow:0 4px 20px rgba(255,71,87,0.4)">
+      <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.4rem" id="alertTitle"></div>
+      <div id="alertBody" style="line-height:1.6"></div>
+      <button onclick="this.parentElement.parentElement.style.display='none'" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer">&times;</button>
+    </div>
   </div>
 
   <script>
@@ -263,9 +279,10 @@
       const size = (grade === '국보' || grade === '보물') ? 12 : 9;
       const border = riskLevel === 'danger' ? '3px solid #ff4757' :
                      riskLevel === 'warning' ? '2px solid #f5a623' : '2px solid rgba(255,255,255,0.6)';
+      const pulseClass = riskLevel === 'danger' ? 'pulse-marker' : '';
       return L.divIcon({
         className: '',
-        html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;border:${border};box-shadow:0 0 6px ${color}88;"></div>`,
+        html: `<div class="${pulseClass}" style="width:${size}px;height:${size}px;background:${color};border-radius:50%;border:${border};box-shadow:0 0 6px ${color}88;"></div>`,
         iconSize: [size, size],
         iconAnchor: [size/2, size/2],
       });
@@ -338,8 +355,11 @@
 
         if (!lat || !lng) continue;
 
+        r.latitude = lat;
+        r.longitude = lng;
+        r.status = status;
         const marker = L.marker([lat, lng], { icon: makeStationIcon(status) });
-        const ratio = r.level_ratio ? r.level_ratio.toFixed(1) : '?';
+        const ratioStr = r.level_ratio ? r.level_ratio.toFixed(1) : '?';
         const rw = weatherByRiver[r.river] || [];
         const maxRainProb = rw.length ? Math.max(...rw.map(w => w.rain_probability)) : 0;
         const nextRain = rw.find(w => w.rain_probability >= 50);
@@ -353,7 +373,7 @@
             <div class="popup-info" style="margin-top:6px">
               하천: ${r.river || '-'}<br>
               수위: ${r.water_level || '-'}cm / 제방: ${r.embankment_height || '-'}cm<br>
-              수위비율: ${ratio}%${weatherLine}<br>
+              수위비율: ${ratioStr}%${weatherLine}<br>
               측정: ${r.measured_at ? new Date(r.measured_at).toLocaleString('ko') : '-'}
             </div>
           </div>
@@ -371,29 +391,47 @@
       }
 
       let highRisk = 0;
+      const dangerAssets = [];
+
       for (const a of assets) {
         if (!a.latitude || !a.longitude) continue;
 
-        const riskLevel = a.distance_km <= 0.5 ? 'danger' :
-                          a.distance_km <= 1.0 ? 'warning' : 'safe';
+        const nearestStatus = getNearestStationStatus(a.latitude, a.longitude);
+        const riverWeather = weatherByRiver[a.nearest_river] || [];
+        const maxRain = riverWeather.length ? Math.max(...riverWeather.map(w => w.rain_probability)) : 0;
 
-        if ((a.grade === '국보' || a.grade === '보물' || a.grade === '사적') && a.distance_km <= 1.0) {
+        let proximityScore = a.distance_km <= 0.3 ? 40 : a.distance_km <= 0.5 ? 30 : a.distance_km <= 1.0 ? 15 : 5;
+        let stationScore = nearestStatus === 'danger' ? 40 : nearestStatus === 'warning' ? 20 : 0;
+        let rainScore = maxRain >= 80 ? 20 : maxRain >= 60 ? 12 : maxRain >= 40 ? 6 : 0;
+        const gradeBonus = (a.grade === '국보') ? 10 : (a.grade === '보물') ? 5 : 0;
+        const riskScore = Math.min(100, proximityScore + stationScore + rainScore + gradeBonus);
+
+        const riskLevel = riskScore >= 60 ? 'danger' : riskScore >= 35 ? 'warning' : 'safe';
+
+        if (riskLevel === 'danger' || ((a.grade === '국보' || a.grade === '보물' || a.grade === '사적') && a.distance_km <= 1.0 && nearestStatus !== 'safe')) {
           highRisk++;
         }
+        if (riskLevel === 'danger') {
+          dangerAssets.push({ name: a.name, grade: a.grade, river: a.nearest_river, distance: a.distance_km, score: riskScore });
+        }
+
+        a.riskLevel = riskLevel;
+        a.riskScore = riskScore;
 
         const marker = L.marker([a.latitude, a.longitude], {
           icon: makeAssetIcon(a.grade, riskLevel)
         });
 
+        const riskLabel = riskScore >= 60 ? '🔴 위험' : riskScore >= 35 ? '🟡 주의' : '🟢 안전';
         marker.bindPopup(`
-          <div style="min-width:200px">
+          <div style="min-width:220px">
             <div class="popup-title">${a.name}</div>
-            ${a.name_hanja ? `<div style="font-size:0.72rem;color:#999;margin-bottom:4px">${a.name_hanja}</div>` : ''}
             <div><span class="popup-grade ${gradeClass(a.grade)}">${a.grade}</span></div>
             <div class="popup-info" style="margin-top:6px">
-              위치: ${a.district || '-'}<br>
               인접 하천: ${a.nearest_river || '-'} (${a.distance_km}km)<br>
-              위험도: ${a.risk_priority >= 4 ? '🔴 높음' : a.risk_priority >= 3 ? '🟡 중간' : '🟢 낮음'}
+              인접관측소 상태: <span class="river-popup-status ${nearestStatus}">${statusLabel(nearestStatus)}</span><br>
+              강수확률: ${maxRain}%<br>
+              <b>복합 위험도: ${riskLabel} (${riskScore}점)</b>
             </div>
           </div>
         `);
@@ -401,6 +439,15 @@
         marker.assetData = a;
         marker.addTo(map);
         allAssetMarkers.push(marker);
+      }
+
+      if (dangerAssets.length > 0) {
+        const alertPanel = document.getElementById('alertPanel');
+        document.getElementById('alertTitle').textContent = `⚠️ ${dangerAssets.length}건 문화재 침수 위험 경보`;
+        document.getElementById('alertBody').innerHTML = dangerAssets.slice(0, 5).map(d =>
+          `<b>${d.name}</b> (${d.grade}) — ${d.river} ${d.distance}km, 위험도 ${d.score}점`
+        ).join('<br>');
+        alertPanel.style.display = 'block';
       }
 
       document.getElementById('sTotalAssets').textContent = assets.length;
@@ -414,6 +461,14 @@
       else if (globalMaxRain >= 60) { rainEl.style.color = '#f5a623'; }
       else { rainEl.style.color = '#2ecc71'; }
 
+      const allScores = allAssetMarkers.map(m => m.assetData.riskScore || 0);
+      const avgRisk = allScores.length ? Math.round(allScores.reduce((a,b) => a+b, 0) / allScores.length) : 0;
+      const floodEl = document.getElementById('sFloodRisk');
+      floodEl.textContent = avgRisk + '점';
+      if (avgRisk >= 60) { floodEl.style.color = '#ff4757'; }
+      else if (avgRisk >= 35) { floodEl.style.color = '#f5a623'; }
+      else { floodEl.style.color = '#2ecc71'; }
+
       document.getElementById('loading').style.display = 'none';
     }
 
@@ -426,7 +481,7 @@
         const a = m.assetData;
         let show = true;
         if (filter === 'danger') {
-          show = a.distance_km <= 1.0;
+          show = a.riskLevel === 'danger' || a.riskLevel === 'warning';
         } else if (filter === 'national') {
           show = a.grade === '국보' || a.grade === '보물';
         } else if (filter === 'close') {
