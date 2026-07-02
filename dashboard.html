@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RiverWatch — 서울 하천 생태 대시보드</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#7873f5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RiverWatch">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -286,11 +286,11 @@
   <header>
     <h1><span>RiverWatch</span> 서울 하천 생태 대시보드 <span style="font-size:0.55em;background:#f39c1233;color:#f39c12;border:1px solid #f39c1255;padding:2px 8px;border-radius:12px;vertical-align:middle;margin-left:6px">Beta 시범운영</span></h1>
     <div class="status-bar" id="statusBar">
-      <a href="/report" class="badge safe" style="text-decoration:none">🔬 제보</a>
-      <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
-      <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
-      <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-      <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+      <a href="report" class="badge safe" style="text-decoration:none">🔬 제보</a>
+      <a href="today" class="badge warning" style="text-decoration:none">📊 오늘</a>
+      <a href="mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
+      <a href="play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+      <a href="analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
       <span class="time-label" id="lastUpdate">로딩중...</span>
     </div>
   </header>
@@ -703,11 +703,11 @@
       });
 
       document.getElementById('statusBar').innerHTML = `
-        <a href="/report" class="badge safe" style="text-decoration:none">🔬 제보</a>
-        <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
-        <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
-        <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-        <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+        <a href="report" class="badge safe" style="text-decoration:none">🔬 제보</a>
+        <a href="today" class="badge warning" style="text-decoration:none">📊 오늘</a>
+        <a href="mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
+        <a href="play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+        <a href="analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
         <span class="badge danger">${dangerN} 위험</span>
         <span class="badge warning">${warnN} 주의</span>
         <span class="badge safe">${safeN} 안전</span>
