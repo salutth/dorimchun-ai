@@ -1,5 +1,5 @@
 import json, urllib.request, os
-os.chdir(r'C:\Users\salut\sakyowon-ai')
+os.chdir(r'C:\Users\salut\dorimchun-ai')
 
 env = {}
 with open('.env') as f:

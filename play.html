@@ -562,7 +562,7 @@
 
     function shareResult() {
       const pct = Math.round(score / questions.length * 100);
-      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://sakyowon-ai.pages.dev/play.html`;
+      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://dorimchun-ai.pages.dev/play.html`;
 
       if (navigator.share) {
         navigator.share({ title: '하천 생물 퀴즈 결과', text }).catch(() => {});

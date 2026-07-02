@@ -203,8 +203,8 @@ def format_telegram_message(alerts):
             lines.append(f"  📍 {a['station']} ({a['river']}) — {a['reasons'][0]}")
         lines.append("")
 
-    lines.append(f"📊 상세: https://sakyowon-ai.pages.dev/river-on")
-    lines.append(f"💧 대시보드: https://sakyowon-ai.pages.dev/dashboard")
+    lines.append(f"📊 상세: https://dorimchun-ai.pages.dev/river-on")
+    lines.append(f"💧 대시보드: https://dorimchun-ai.pages.dev/dashboard")
 
     return "\n".join(lines)
 
