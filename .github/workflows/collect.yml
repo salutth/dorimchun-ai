@@ -48,5 +48,11 @@ jobs:
       - name: 수질 TMS
         run: python collectors/water_quality.py
 
-      - name: 월간 분석 보고서
-        run: python collectors/policy_report.py
+      - name: ML 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: AI 수위 예측
+        run: python collectors/flood_predict.py
+
+      - name: K-SAFE 홍수위험지수
+        run: python collectors/flood_risk_index.py
