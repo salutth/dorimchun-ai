@@ -12,5 +12,5 @@ for size in [192, 512]:
     x = (size - tw) // 2
     y = (size - th) // 2 - int(size * 0.03)
     draw.text((x, y), "RW", fill=(255, 255, 255, 255), font=font)
-    img.save(f"C:/Users/salut/sakyowon-ai/icon-{size}.png")
+    img.save(f"C:/Users/salut/dorimchun-ai/icon-{size}.png")
     print(f"icon-{size}.png saved")

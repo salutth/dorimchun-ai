@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 set PYTHON=C:\Users\salut\AppData\Local\Programs\Python\Python312\python.exe
-set PROJECT=C:\Users\salut\sakyowon-ai
+set PROJECT=C:\Users\salut\dorimchun-ai
 
 echo [%date% %time%] RiverWatch 데이터 수집 시작 >> "%PROJECT%\collector.log"
 
@@ -13,6 +13,8 @@ echo [%date% %time%] RiverWatch 데이터 수집 시작 >> "%PROJECT%\collector.
 "%PYTHON%" "%PROJECT%\collectors\cultural_assets.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\weather.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\flood_alert.py" >> "%PROJECT%\collector.log" 2>&1
+"%PYTHON%" "%PROJECT%\collectors\flood_predict.py" >> "%PROJECT%\collector.log" 2>&1
+"%PYTHON%" "%PROJECT%\collectors\flood_risk_index.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\water_quality.py" >> "%PROJECT%\collector.log" 2>&1
 
 echo [%date% %time%] 수집 완료 >> "%PROJECT%\collector.log"

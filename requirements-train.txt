@@ -1,0 +1,2 @@
+-r requirements.txt
+torch>=2.3,<3.0 --index-url https://download.pytorch.org/whl/cpu

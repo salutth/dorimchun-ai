@@ -118,3 +118,70 @@ create table if not exists collector_health (
 alter table collector_health enable row level security;
 create policy "health_read" on collector_health for select using (true);
 create policy "health_insert" on collector_health for insert with check (true);
+
+-- 8. AI 침수 예측 (Phase 3-1 LSTM)
+create table if not exists flood_predictions (
+  id bigint generated always as identity primary key,
+  station text not null,
+  river text not null,
+  prediction_hour int not null,
+  predicted_level real not null,
+  predicted_ratio real,
+  predicted_status text,
+  confidence real,
+  model_version text default 'v1',
+  input_snapshot jsonb,
+  predicted_at timestamptz not null,
+  target_time timestamptz not null,
+  created_at timestamptz default now()
+);
+
+alter table flood_predictions enable row level security;
+create policy "pred_read" on flood_predictions for select using (true);
+create policy "pred_insert" on flood_predictions for insert with check (true);
+
+create index if not exists idx_pred_station_target
+  on flood_predictions(station, target_time);
+create index if not exists idx_pred_river
+  on flood_predictions(river);
+create index if not exists idx_pred_created
+  on flood_predictions(created_at desc);
+
+alter table flood_predictions
+  add constraint uq_pred_station_target_at
+  unique (station, target_time, predicted_at);
+
+-- 9. K-SAFE 홍수위험지수 (Phase 3-2)
+create table if not exists flood_risk_index (
+  id bigint generated always as identity primary key,
+  station text not null,
+  river text not null,
+  composite_score real not null,
+  risk_grade text not null,
+  w1_water_level real,
+  w2_weather real,
+  w3_prediction real,
+  w4_history real,
+  cross_validation real,
+  disaster_stage text,
+  trend_direction text,
+  resilience_robustness real,
+  resilience_redundancy real,
+  resilience_resourcefulness real,
+  resilience_rapidity real,
+  resilience_average real,
+  data_sources int,
+  calculated_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
+alter table flood_risk_index enable row level security;
+create policy "risk_read" on flood_risk_index for select using (true);
+create policy "risk_insert" on flood_risk_index for insert with check (true);
+
+create index if not exists idx_risk_station_time
+  on flood_risk_index(station, calculated_at desc);
+create index if not exists idx_risk_river
+  on flood_risk_index(river);
+create index if not exists idx_risk_grade
+  on flood_risk_index(risk_grade);
