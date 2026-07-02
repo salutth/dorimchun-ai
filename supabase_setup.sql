@@ -185,3 +185,38 @@ create index if not exists idx_risk_river
   on flood_risk_index(river);
 create index if not exists idx_risk_grade
   on flood_risk_index(risk_grade);
+
+-- ==========================================================
+-- 10. RLS 보안 강화 — anon INSERT 차단 (Phase 3-3)
+-- 실행 전 반드시 GitHub Secrets와 .env의 SUPABASE_KEY를
+-- service_role key로 교체해야 합니다.
+-- Supabase 대시보드 > Settings > API > service_role key 복사
+-- ==========================================================
+
+-- 기존 anon INSERT 정책 제거
+drop policy if exists "river_readings_insert" on river_readings;
+drop policy if exists "species_insert" on species_observations;
+drop policy if exists "alerts_insert" on invasive_alerts;
+drop policy if exists "ehi_insert" on ehi_scores;
+drop policy if exists "health_insert" on collector_health;
+drop policy if exists "pred_insert" on flood_predictions;
+drop policy if exists "risk_insert" on flood_risk_index;
+
+-- service_role만 INSERT 허용
+create policy "svc_insert" on river_readings
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on species_observations
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on invasive_alerts
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on ehi_scores
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on collector_health
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on flood_predictions
+  for insert with check (auth.role() = 'service_role');
+create policy "svc_insert" on flood_risk_index
+  for insert with check (auth.role() = 'service_role');
+
+-- 시민측정 테이블만 anon INSERT 유지
+-- citizen_water_quality는 별도 관리 (anon 쓰기 허용)
