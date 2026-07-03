@@ -83,6 +83,7 @@ def fetch_observations(lat, lng, radius_km, days=30):
         "order_by": "observed_on",
         "per_page": 50,
         "quality_grade": "research,needs_id",
+        "locale": "ko",
     })
     url = f"https://api.inaturalist.org/v1/observations?{params}"
     req = urllib.request.Request(url)
