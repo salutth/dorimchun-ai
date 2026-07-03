@@ -137,86 +137,12 @@ create table if not exists flood_predictions (
 );
 
 alter table flood_predictions enable row level security;
-create policy "pred_read" on flood_predictions for select using (true);
-create policy "pred_insert" on flood_predictions for insert with check (true);
+create policy "predictions_read" on flood_predictions for select using (true);
+create policy "predictions_insert" on flood_predictions for insert with check (true);
 
-create index if not exists idx_pred_station_target
-  on flood_predictions(station, target_time);
-create index if not exists idx_pred_river
-  on flood_predictions(river);
-create index if not exists idx_pred_created
-  on flood_predictions(created_at desc);
+create index if not exists idx_predictions_station_target on flood_predictions(station, target_time);
+create index if not exists idx_predictions_river on flood_predictions(river);
+create index if not exists idx_predictions_created on flood_predictions(created_at desc);
 
 alter table flood_predictions
-  add constraint uq_pred_station_target_at
-  unique (station, target_time, predicted_at);
-
--- 9. K-SAFE 홍수위험지수 (Phase 3-2)
-create table if not exists flood_risk_index (
-  id bigint generated always as identity primary key,
-  station text not null,
-  river text not null,
-  composite_score real not null,
-  risk_grade text not null,
-  w1_water_level real,
-  w2_weather real,
-  w3_prediction real,
-  w4_history real,
-  cross_validation real,
-  disaster_stage text,
-  trend_direction text,
-  resilience_robustness real,
-  resilience_redundancy real,
-  resilience_resourcefulness real,
-  resilience_rapidity real,
-  resilience_average real,
-  data_sources int,
-  calculated_at timestamptz not null,
-  created_at timestamptz default now()
-);
-
-alter table flood_risk_index enable row level security;
-create policy "risk_read" on flood_risk_index for select using (true);
-create policy "risk_insert" on flood_risk_index for insert with check (true);
-
-create index if not exists idx_risk_station_time
-  on flood_risk_index(station, calculated_at desc);
-create index if not exists idx_risk_river
-  on flood_risk_index(river);
-create index if not exists idx_risk_grade
-  on flood_risk_index(risk_grade);
-
--- ==========================================================
--- 10. RLS 보안 강화 — anon INSERT 차단 (Phase 3-3)
--- 실행 전 반드시 GitHub Secrets와 .env의 SUPABASE_KEY를
--- service_role key로 교체해야 합니다.
--- Supabase 대시보드 > Settings > API > service_role key 복사
--- ==========================================================
-
--- 기존 anon INSERT 정책 제거
-drop policy if exists "river_readings_insert" on river_readings;
-drop policy if exists "species_insert" on species_observations;
-drop policy if exists "alerts_insert" on invasive_alerts;
-drop policy if exists "ehi_insert" on ehi_scores;
-drop policy if exists "health_insert" on collector_health;
-drop policy if exists "pred_insert" on flood_predictions;
-drop policy if exists "risk_insert" on flood_risk_index;
-
--- service_role만 INSERT 허용
-create policy "svc_insert" on river_readings
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on species_observations
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on invasive_alerts
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on ehi_scores
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on collector_health
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on flood_predictions
-  for insert with check (auth.role() = 'service_role');
-create policy "svc_insert" on flood_risk_index
-  for insert with check (auth.role() = 'service_role');
-
--- 시민측정 테이블만 anon INSERT 유지
--- citizen_water_quality는 별도 관리 (anon 쓰기 허용)
+  add constraint uq_predictions unique (station, target_time, predicted_at);

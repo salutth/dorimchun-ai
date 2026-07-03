@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RiverWatch — 서울 하천 생태 대시보드</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#7873f5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RiverWatch">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -283,15 +283,14 @@
   </style>
 </head>
 <body>
-<script src="gate.js"></script>
   <header>
     <h1><span>RiverWatch</span> 서울 하천 생태 대시보드 <span style="font-size:0.55em;background:#f39c1233;color:#f39c12;border:1px solid #f39c1255;padding:2px 8px;border-radius:12px;vertical-align:middle;margin-left:6px">Beta 시범운영</span></h1>
     <div class="status-bar" id="statusBar">
-      <a href="report" class="badge safe" style="text-decoration:none">🔬 제보</a>
-      <a href="today" class="badge warning" style="text-decoration:none">📊 오늘</a>
-      <a href="mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
-      <a href="play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-      <a href="analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+      <a href="/report" class="badge safe" style="text-decoration:none">🔬 제보</a>
+      <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
+      <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
+      <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+      <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
       <span class="time-label" id="lastUpdate">로딩중...</span>
     </div>
   </header>
@@ -333,6 +332,34 @@
         </select>
       </div>
       <div class="card-body"><div id="chart-container"><canvas id="chart"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        🧠 AI 수위 예측 (LSTM) — <span id="predRiverName">도림천</span>
+        <span class="time-label" id="predSummary"></span>
+      </div>
+      <div class="card-body">
+        <div style="height:320px;padding:0.5rem"><canvas id="predictionChart"></canvas></div>
+        <div id="predTable" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        📊 AI 예측 검증 — <span id="verifyRiverName">도림천</span>
+        <span class="time-label" id="verifySummary"></span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:0.5rem">
+          <div style="height:300px"><canvas id="verifyChart"></canvas></div>
+          <div>
+            <div id="verifyMetrics" style="padding:0.5rem"></div>
+            <div style="height:180px;margin-top:0.5rem"><canvas id="errorChart"></canvas></div>
+          </div>
+        </div>
+        <div id="verifyDetail" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -543,91 +570,11 @@
       </div>
       <div class="card-body"><div style="height:320px;padding:0.5rem"><canvas id="compareChart"></canvas></div></div>
     </div>
-
-    <!-- K-SAFE 홍수위험지수 (Phase 3-2) -->
-    <div class="card full-width">
-      <div class="card-header">
-        🛡️ K-SAFE 홍수위험지수
-        <span class="time-label" id="riskTime"></span>
-      </div>
-      <div class="card-body" style="padding:1rem">
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;margin-bottom:1rem" id="riskSummary">
-          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
-            <div style="font-size:0.7rem;color:#888">🔴 심각 Critical</div>
-            <div style="font-size:1.6rem;font-weight:800;color:#e74c3c" id="riskCritical">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
-            <div style="font-size:0.7rem;color:#888">🟠 높음 High</div>
-            <div style="font-size:1.6rem;font-weight:800;color:#e67e22" id="riskHigh">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
-            <div style="font-size:0.7rem;color:#888">🟡 보통 Moderate</div>
-            <div style="font-size:1.6rem;font-weight:800;color:#f1c40f" id="riskModerate">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
-            <div style="font-size:0.7rem;color:#888">🟢 낮음 Low</div>
-            <div style="font-size:1.6rem;font-weight:800;color:#2ecc71" id="riskLow">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
-            <div style="font-size:0.7rem;color:#888">⚪ 최소 Minimal</div>
-            <div style="font-size:1.6rem;font-weight:800;color:#95a5a6" id="riskMinimal">-</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-          <div style="height:280px"><canvas id="riskRadar"></canvas></div>
-          <div style="height:280px"><canvas id="riskBar"></canvas></div>
-        </div>
-        <div style="margin-top:1rem;overflow-x:auto" id="riskTable"></div>
-      </div>
-    </div>
-
-    <!-- AI 수위 예측 (Phase 3-1) -->
-    <div class="card">
-      <div class="card-header">
-        🧠 AI 수위 예측 (LSTM)
-        <span id="predRiverName" style="color:#7873f5"></span>
-        <span class="time-label" id="predSummary"></span>
-      </div>
-      <div class="card-body">
-        <div style="height:260px;padding:0.5rem"><canvas id="predictionChart"></canvas></div>
-        <div id="predTable" style="overflow-x:auto;margin-top:0.5rem"></div>
-      </div>
-    </div>
-
-    <!-- AI 예측 검증 -->
-    <div class="card">
-      <div class="card-header">
-        🔍 AI 예측 검증 (Guardian Agent)
-        <span class="time-label" id="verifyTime"></span>
-      </div>
-      <div class="card-body" style="padding:1rem">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem" id="verifyMetrics">
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균절대오차 MAE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균제곱근오차 RMSE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vRMSE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균백분율오차 MAPE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAPE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">상태정확도 Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vAccuracy">-</div>
-          </div>
-        </div>
-        <div style="height:220px"><canvas id="verifyChart"></canvas></div>
-        <div id="verifyDetail" style="overflow-x:auto;margin-top:0.5rem"></div>
-      </div>
-    </div>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tpnikydhphhpwtksxanm.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
+    const SUPABASE_URL = 'https://luczuisihsskyhhqgviy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
 
     const headers = {
       'apikey': SUPABASE_KEY,
@@ -704,11 +651,11 @@
       });
 
       document.getElementById('statusBar').innerHTML = `
-        <a href="report" class="badge safe" style="text-decoration:none">🔬 제보</a>
-        <a href="today" class="badge warning" style="text-decoration:none">📊 오늘</a>
-        <a href="mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
-        <a href="play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-        <a href="analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+        <a href="/report" class="badge safe" style="text-decoration:none">🔬 제보</a>
+        <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
+        <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
+        <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
+        <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
         <span class="badge danger">${dangerN} 위험</span>
         <span class="badge warning">${warnN} 주의</span>
         <span class="badge safe">${safeN} 안전</span>
@@ -835,6 +782,305 @@
       });
     }
 
+    // --- AI PREDICTION ---
+    let predChartInstance = null;
+    async function loadPredictions() {
+      const river = getSelectedRiver();
+      document.getElementById('predRiverName').textContent = river;
+
+      const preds = await query('flood_predictions',
+        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=200`);
+
+      if (preds.length === 0) {
+        document.getElementById('predSummary').textContent = '예측 데이터 없음';
+        document.getElementById('predTable').innerHTML = '<div class="loading">아직 예측 데이터가 없습니다. ml/train_lstm.py로 모델 학습 후 collectors/flood_predict.py를 실행하세요.</div>';
+        if (predChartInstance) { predChartInstance.destroy(); predChartInstance = null; }
+        return;
+      }
+
+      const latestAt = preds[0].predicted_at;
+      const latest = preds.filter(p => p.predicted_at === latestAt);
+
+      const stationGroups = {};
+      latest.forEach(p => {
+        if (!stationGroups[p.station]) stationGroups[p.station] = [];
+        stationGroups[p.station].push(p);
+      });
+
+      const predColors = ['#ff6ec4', '#ffa726', '#ab47bc'];
+      const datasets = [];
+      let colorIdx = 0;
+      let dangerCount = 0, warningCount = 0;
+
+      Object.keys(stationGroups).forEach(stn => {
+        const pts = stationGroups[stn].sort((a, b) => a.prediction_hour - b.prediction_hour);
+        const color = predColors[colorIdx % predColors.length];
+        colorIdx++;
+
+        pts.forEach(p => {
+          if (p.predicted_status === 'danger') dangerCount++;
+          if (p.predicted_status === 'warning') warningCount++;
+        });
+
+        datasets.push({
+          label: `${stn} (예측)`,
+          data: pts.map(p => ({ x: new Date(p.target_time), y: p.predicted_ratio })),
+          borderColor: color,
+          backgroundColor: color + '18',
+          fill: true,
+          borderDash: [6, 3],
+          tension: 0.3,
+          pointRadius: 4,
+          pointStyle: 'triangle',
+        });
+
+        const confUpper = pts.map(p => ({ x: new Date(p.target_time), y: Math.min(100, p.predicted_ratio + (1 - p.confidence) * 15) }));
+        const confLower = pts.map(p => ({ x: new Date(p.target_time), y: Math.max(0, p.predicted_ratio - (1 - p.confidence) * 15) }));
+        datasets.push({
+          label: `${stn} 신뢰구간`,
+          data: confUpper,
+          borderColor: 'transparent',
+          backgroundColor: color + '10',
+          fill: '+1',
+          pointRadius: 0,
+        });
+        datasets.push({
+          label: '_lower',
+          data: confLower,
+          borderColor: 'transparent',
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+        });
+      });
+
+      let summaryText = `예측 시점: ${new Date(latestAt).toLocaleString('ko-KR')}`;
+      if (dangerCount > 0) summaryText += ` | 🔴 위험 ${dangerCount}`;
+      if (warningCount > 0) summaryText += ` | 🟡 주의 ${warningCount}`;
+      document.getElementById('predSummary').textContent = summaryText;
+
+      if (predChartInstance) predChartInstance.destroy();
+      predChartInstance = new Chart(document.getElementById('predictionChart'), {
+        type: 'line',
+        data: { datasets: datasets.filter(d => d.label !== '_lower').concat(datasets.filter(d => d.label === '_lower')) },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'timeseries',
+              time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+              ticks: { color: '#666' },
+              grid: { color: '#1a1a28' },
+              title: { display: true, text: '예측 시간', color: '#666' },
+            },
+            y: {
+              title: { display: true, text: '수위 비율 (%)', color: '#666' },
+              ticks: { color: '#666' },
+              grid: { color: '#1a1a28' },
+              suggestedMin: 0,
+              suggestedMax: 100,
+            },
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#ccc',
+                filter: item => !item.text.startsWith('_') && !item.text.includes('신뢰구간'),
+              },
+            },
+            annotation: {
+              annotations: {
+                dangerLine: { type: 'line', yMin: 80, yMax: 80, borderColor: '#e74c3c44', borderDash: [5, 5], label: { display: true, content: '위험', color: '#e74c3c', position: 'end' } },
+                warningLine: { type: 'line', yMin: 50, yMax: 50, borderColor: '#f39c1244', borderDash: [5, 5], label: { display: true, content: '주의', color: '#f39c12', position: 'end' } },
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.dataset.label.startsWith('_') || ctx.dataset.label.includes('신뢰구간')) return null;
+                  return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`;
+                },
+              },
+            },
+          },
+        },
+      });
+
+      let tableHtml = '<table style="width:100%;border-collapse:collapse"><tr style="border-bottom:1px solid #2a2a3a">' +
+        '<th style="text-align:left;padding:4px;color:#7873f5">관측소</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">3h</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">6h</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">12h</th></tr>';
+      Object.keys(stationGroups).forEach(stn => {
+        const pts = stationGroups[stn].sort((a, b) => a.prediction_hour - b.prediction_hour);
+        const get = h => pts.find(p => p.prediction_hour === h);
+        const cell = p => {
+          if (!p) return '<td style="text-align:center;padding:4px">-</td>';
+          const c = statusColors[p.predicted_status] || '#666';
+          return `<td style="text-align:center;padding:4px;color:${c}">${p.predicted_ratio.toFixed(1)}%</td>`;
+        };
+        tableHtml += `<tr style="border-bottom:1px solid #1a1a28"><td style="padding:4px">${esc(stn)}</td>${cell(get(3))}${cell(get(6))}${cell(get(12))}</tr>`;
+      });
+      tableHtml += '</table>';
+      document.getElementById('predTable').innerHTML = tableHtml;
+    }
+
+    // --- VERIFICATION ---
+    let verifyChartInstance = null, errorChartInstance = null;
+    async function loadVerification() {
+      const river = getSelectedRiver();
+      document.getElementById('verifyRiverName').textContent = river;
+
+      const preds = await query('flood_predictions',
+        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=500`);
+      const actuals = await query('river_readings',
+        `select=station,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=500`);
+
+      if (preds.length === 0 || actuals.length === 0) {
+        document.getElementById('verifySummary').textContent = '검증 데이터 부족';
+        document.getElementById('verifyMetrics').innerHTML = '<div class="loading">예측 데이터와 실측 데이터가 모두 있어야 검증할 수 있습니다.</div>';
+        document.getElementById('verifyDetail').innerHTML = '';
+        if (verifyChartInstance) { verifyChartInstance.destroy(); verifyChartInstance = null; }
+        if (errorChartInstance) { errorChartInstance.destroy(); errorChartInstance = null; }
+        return;
+      }
+
+      const actualMap = {};
+      actuals.forEach(a => {
+        const t = new Date(a.measured_at);
+        const key = `${a.station}_${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}T${String(t.getHours()).padStart(2,'0')}`;
+        if (!actualMap[key]) actualMap[key] = a;
+      });
+
+      const matched = [];
+      preds.forEach(p => {
+        const tt = new Date(p.target_time);
+        const key = `${p.station}_${tt.getFullYear()}-${String(tt.getMonth()+1).padStart(2,'0')}-${String(tt.getDate()).padStart(2,'0')}T${String(tt.getHours()).padStart(2,'0')}`;
+        const actual = actualMap[key];
+        if (actual) {
+          matched.push({
+            station: p.station,
+            hour: p.prediction_hour,
+            predicted: p.predicted_ratio,
+            actual: actual.level_ratio,
+            error: Math.abs(p.predicted_ratio - actual.level_ratio),
+            pctError: actual.level_ratio > 0 ? Math.abs(p.predicted_ratio - actual.level_ratio) / actual.level_ratio * 100 : 0,
+            predStatus: p.predicted_status,
+            actualStatus: actual.status,
+            time: tt,
+          });
+        }
+      });
+
+      if (matched.length === 0) {
+        document.getElementById('verifySummary').textContent = '매칭된 예측-실측 쌍 없음 (데이터 축적 중)';
+        document.getElementById('verifyMetrics').innerHTML = '<div style="color:#f39c12;padding:1rem">⏳ 예측 시점의 target_time과 실측 measured_at이 아직 일치하지 않습니다.<br>매시간 수집이 진행되면 자동으로 검증이 시작됩니다.</div>';
+        document.getElementById('verifyDetail').innerHTML = '';
+        return;
+      }
+
+      const n = matched.length;
+      const mae = matched.reduce((s, m) => s + m.error, 0) / n;
+      const rmse = Math.sqrt(matched.reduce((s, m) => s + m.error * m.error, 0) / n);
+      const mape = matched.filter(m => m.actual > 0).length > 0
+        ? matched.filter(m => m.actual > 0).reduce((s, m) => s + m.pctError, 0) / matched.filter(m => m.actual > 0).length : 0;
+      const statusMatch = matched.filter(m => m.predStatus === m.actualStatus).length;
+      const statusAcc = (statusMatch / n * 100);
+
+      let grade = '🔴 미흡', gradeColor = '#e74c3c';
+      if (mape < 10) { grade = '🟢 우수'; gradeColor = '#2ecc71'; }
+      else if (mape < 20) { grade = '🟡 양호'; gradeColor = '#f39c12'; }
+      else if (mape < 30) { grade = '🟠 보통'; gradeColor = '#e67e22'; }
+
+      document.getElementById('verifySummary').textContent = `${n}건 검증 | ${grade}`;
+      document.getElementById('verifyMetrics').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div style="background:#1a1a28;border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">MAE (평균절대오차)</div>
+            <div style="font-size:1.5rem;font-weight:700;color:#7873f5">${mae.toFixed(2)}%p</div>
+          </div>
+          <div style="background:#1a1a28;border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">RMSE (평균제곱근오차)</div>
+            <div style="font-size:1.5rem;font-weight:700;color:#ff6ec4">${rmse.toFixed(2)}%p</div>
+          </div>
+          <div style="background:#1a1a28;border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">MAPE (평균백분율오차)</div>
+            <div style="font-size:1.5rem;font-weight:700;color:${gradeColor}">${mape.toFixed(1)}%</div>
+          </div>
+          <div style="background:#1a1a28;border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">상태 적중률</div>
+            <div style="font-size:1.5rem;font-weight:700;color:${statusAcc>=80?'#2ecc71':statusAcc>=60?'#f39c12':'#e74c3c'}">${statusAcc.toFixed(1)}%</div>
+          </div>
+        </div>`;
+
+      matched.sort((a, b) => a.time - b.time);
+      if (verifyChartInstance) verifyChartInstance.destroy();
+      verifyChartInstance = new Chart(document.getElementById('verifyChart'), {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: '실측', data: matched.map(m => ({x: m.time, y: m.actual})), borderColor: '#7873f5', backgroundColor: '#7873f522', fill: false, tension: 0.3, pointRadius: 3 },
+            { label: '예측', data: matched.map(m => ({x: m.time, y: m.predicted})), borderColor: '#ff6ec4', backgroundColor: '#ff6ec422', borderDash: [6,3], fill: false, tension: 0.3, pointRadius: 3, pointStyle: 'triangle' },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ccc' } }, title: { display: true, text: '예측 vs 실측 수위비율', color: '#aaa', font: { size: 12 } } },
+          scales: {
+            x: { type: 'timeseries', time: { unit: 'hour', displayFormats: { hour: 'MM/dd HH:mm' } }, ticks: { color: '#666' }, grid: { color: '#1a1a28' } },
+            y: { title: { display: true, text: '%', color: '#666' }, ticks: { color: '#666' }, grid: { color: '#1a1a28' }, suggestedMin: 0, suggestedMax: 100 },
+          },
+        },
+      });
+
+      const hourGroups = {};
+      matched.forEach(m => {
+        if (!hourGroups[m.hour]) hourGroups[m.hour] = [];
+        hourGroups[m.hour].push(m.error);
+      });
+      const hourLabels = Object.keys(hourGroups).sort((a,b) => a-b);
+      const hourMAE = hourLabels.map(h => hourGroups[h].reduce((s,e) => s+e, 0) / hourGroups[h].length);
+
+      if (errorChartInstance) errorChartInstance.destroy();
+      errorChartInstance = new Chart(document.getElementById('errorChart'), {
+        type: 'bar',
+        data: {
+          labels: hourLabels.map(h => `${h}h`),
+          datasets: [{ label: 'MAE by 예측시간', data: hourMAE, backgroundColor: hourMAE.map(v => v > 10 ? '#e74c3c88' : v > 5 ? '#f39c1288' : '#2ecc7188'), borderRadius: 4 }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, title: { display: true, text: '예측 시간대별 오차', color: '#aaa', font: { size: 11 } } },
+          scales: {
+            x: { ticks: { color: '#888' }, grid: { display: false } },
+            y: { title: { display: true, text: 'MAE (%p)', color: '#666' }, ticks: { color: '#666' }, grid: { color: '#1a1a28' } },
+          },
+        },
+      });
+
+      let detailHtml = '<table style="width:100%;border-collapse:collapse;margin-top:0.5rem"><tr style="border-bottom:1px solid #2a2a3a">' +
+        '<th style="text-align:left;padding:4px;color:#7873f5">시간</th>' +
+        '<th style="text-align:left;padding:4px;color:#7873f5">관측소</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">예측</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">실측</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">오차</th>' +
+        '<th style="text-align:center;padding:4px;color:#7873f5">상태</th></tr>';
+      matched.slice(-20).forEach(m => {
+        const tStr = m.time.toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        const errColor = m.error > 10 ? '#e74c3c' : m.error > 5 ? '#f39c12' : '#2ecc71';
+        const statusOk = m.predStatus === m.actualStatus ? '✅' : '❌';
+        detailHtml += `<tr style="border-bottom:1px solid #1a1a28">` +
+          `<td style="padding:4px">${tStr}</td>` +
+          `<td style="padding:4px">${esc(m.station)}</td>` +
+          `<td style="text-align:center;padding:4px">${m.predicted.toFixed(1)}%</td>` +
+          `<td style="text-align:center;padding:4px">${m.actual.toFixed(1)}%</td>` +
+          `<td style="text-align:center;padding:4px;color:${errColor}">${m.error.toFixed(1)}%p</td>` +
+          `<td style="text-align:center;padding:4px">${statusOk}</td></tr>`;
+      });
+      detailHtml += '</table>';
+      document.getElementById('verifyDetail').innerHTML = detailHtml;
+    }
+
     // --- SPECIES ---
     async function loadSpecies() {
       const river = getSelectedRiver();
@@ -869,7 +1115,7 @@
     // --- EHI ---
     async function loadEHI() {
       const rows = await query('ehi_scores',
-        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&order=calculated_at.desc&limit=30');
+        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,created_at&order=created_at.desc&limit=30');
 
       const latest = {};
       rows.forEach(r => {
@@ -1120,7 +1366,7 @@
 
       if (metric === 'ehi') {
         const rows = await query('ehi_scores',
-          'select=river,ehi_score,grade&order=calculated_at.desc&limit=50');
+          'select=river,ehi_score,grade&order=created_at.desc&limit=50');
         const latest = {};
         rows.forEach(r => { if (r.river && !latest[r.river]) latest[r.river] = r; });
         const sorted = Object.values(latest).sort((a, b) => (b.ehi_score||0) - (a.ehi_score||0));
@@ -1181,6 +1427,14 @@
     }
 
     document.getElementById('compareMetric').addEventListener('change', loadCompare);
+
+    // --- RIVER SELECT ---
+    document.getElementById('riverSelect').addEventListener('change', () => {
+      loadChart();
+      loadPredictions();
+      loadVerification();
+      loadSpecies();
+    });
 
     // --- CITIZEN WATER QUALITY ---
     let cwLat = null, cwLng = null, cwPhotoData = null, cwMiniMap = null, cwMarker = null;
@@ -1533,285 +1787,16 @@
     const savedObs = localStorage.getItem('rw_observer');
     if (savedObs) document.getElementById('cwObserver').value = savedObs;
 
-    // --- K-SAFE FLOOD RISK INDEX ---
-    let riskRadarChart = null, riskBarChart = null;
-    async function loadRiskIndex() {
-      const rows = await query('flood_risk_index',
-        'select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,cross_validation,disaster_stage,trend_direction,resilience_robustness,resilience_redundancy,resilience_resourcefulness,resilience_rapidity,resilience_average,data_sources,calculated_at&order=calculated_at.desc&limit=50');
-
-      const latest = {};
-      rows.forEach(r => { if (!latest[r.station]) latest[r.station] = r; });
-      const stations = Object.values(latest).sort((a,b) => (b.composite_score||0) - (a.composite_score||0));
-
-      if (!stations.length) {
-        document.getElementById('riskTable').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:1rem">위험지수 데이터 없음 — flood_risk_index 테이블을 Supabase에 생성하세요</div>';
-        return;
-      }
-
-      let critical=0, high=0, moderate=0, low=0, minimal=0;
-      stations.forEach(s => {
-        if (s.risk_grade==='critical') critical++;
-        else if (s.risk_grade==='high') high++;
-        else if (s.risk_grade==='moderate') moderate++;
-        else if (s.risk_grade==='low') low++;
-        else minimal++;
-      });
-      document.getElementById('riskCritical').textContent = critical;
-      document.getElementById('riskHigh').textContent = high;
-      document.getElementById('riskModerate').textContent = moderate;
-      document.getElementById('riskLow').textContent = low;
-      document.getElementById('riskMinimal').textContent = minimal;
-
-      if (stations[0] && stations[0].calculated_at) {
-        const t = new Date(stations[0].calculated_at);
-        document.getElementById('riskTime').textContent = t.toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit' });
-      }
-
-      // Radar: top station's 4D scores + 4R resilience
-      const top = stations[0];
-      if (riskRadarChart) riskRadarChart.destroy();
-      riskRadarChart = new Chart(document.getElementById('riskRadar'), {
-        type: 'radar',
-        data: {
-          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력', 'R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
-          datasets: [{
-            label: `${top.station} (${top.river})`,
-            data: [top.w1_water_level, top.w2_weather, top.w3_prediction, top.w4_history,
-                   top.resilience_robustness, top.resilience_redundancy, top.resilience_resourcefulness, top.resilience_rapidity],
-            backgroundColor: '#7873f522',
-            borderColor: '#7873f5',
-            pointBackgroundColor: '#7873f5',
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 10 } } } },
-          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } } }
-        }
-      });
-
-      // Bar: all stations composite score
-      const gradeColors = { critical:'#e74c3c', high:'#e67e22', moderate:'#f1c40f', low:'#2ecc71', minimal:'#95a5a6' };
-      if (riskBarChart) riskBarChart.destroy();
-      riskBarChart = new Chart(document.getElementById('riskBar'), {
-        type: 'bar',
-        data: {
-          labels: stations.map(s => s.station),
-          datasets: [{
-            label: '종합 위험지수',
-            data: stations.map(s => s.composite_score),
-            backgroundColor: stations.map(s => (gradeColors[s.risk_grade]||'#666') + '88'),
-            borderColor: stations.map(s => gradeColors[s.risk_grade]||'#666'),
-            borderWidth: 1,
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-          scales: { x: { max: 100, ticks: { color: '#666' }, grid: { color: '#1a1a28' } }, y: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { display: false } } },
-          plugins: { legend: { display: false } }
-        }
-      });
-
-      // Table
-      const stageLabels = { prevention:'🟢 예방', preparedness:'🟡 대비', response:'🔴 대응', recovery:'🔵 복구' };
-      const gradeLabels = { critical:'🔴 심각 Critical', high:'🟠 높음 High', moderate:'🟡 보통 Moderate', low:'🟢 낮음 Low', minimal:'⚪ 최소 Minimal' };
-      let tbl = '<table><thead><tr><th>관측소</th><th>하천</th><th>지수</th><th>등급</th><th>단계</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>4R</th><th>검증</th></tr></thead><tbody>';
-      stations.forEach(s => {
-        tbl += `<tr>
-          <td>${esc(s.station)}</td><td>${esc(s.river)}</td>
-          <td style="font-weight:700;color:${gradeColors[s.risk_grade]||'#666'}">${s.composite_score}</td>
-          <td>${gradeLabels[s.risk_grade]||s.risk_grade}</td>
-          <td>${stageLabels[s.disaster_stage]||s.disaster_stage}</td>
-          <td>${(s.w1_water_level||0).toFixed(0)}</td>
-          <td>${(s.w2_weather||0).toFixed(0)}</td>
-          <td>${(s.w3_prediction||0).toFixed(0)}</td>
-          <td>${(s.w4_history||0).toFixed(0)}</td>
-          <td>${(s.resilience_average||0).toFixed(0)}</td>
-          <td>${(s.cross_validation||0).toFixed(2)}</td>
-        </tr>`;
-      });
-      tbl += '</tbody></table>';
-      document.getElementById('riskTable').innerHTML = tbl;
-    }
-
-    // --- AI PREDICTIONS ---
-    let predChart = null;
-    async function loadPredictions() {
-      const river = getSelectedRiver();
-      document.getElementById('predRiverName').textContent = river;
-      const rows = await query('flood_predictions',
-        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,predicted_at,target_time&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=200`);
-
-      if (!rows.length) {
-        document.getElementById('predTable').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:0.5rem">예측 데이터 없음</div>';
-        if (predChart) { predChart.destroy(); predChart = null; }
-        return;
-      }
-
-      const byStation = {};
-      rows.forEach(r => {
-        if (!byStation[r.station]) byStation[r.station] = [];
-        byStation[r.station].push(r);
-      });
-
-      const colors = ['#ff6ec4', '#7873f5', '#3ECF8E'];
-      const datasets = [];
-      let idx = 0;
-      for (const [stn, preds] of Object.entries(byStation)) {
-        const latestAt = preds[0].predicted_at;
-        const latestPreds = preds.filter(p => p.predicted_at === latestAt).sort((a,b) => a.prediction_hour - b.prediction_hour);
-        const c = colors[idx % colors.length];
-        datasets.push({
-          label: `${stn} 예측`,
-          data: latestPreds.map(p => ({ x: new Date(p.target_time), y: p.predicted_ratio })),
-          borderColor: c, backgroundColor: c + '22',
-          borderDash: [6, 3], fill: true, tension: 0.3, pointRadius: 4,
-        });
-        idx++;
-      }
-
-      if (predChart) predChart.destroy();
-      predChart = new Chart(document.getElementById('predictionChart'), {
-        type: 'line',
-        data: { datasets },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            x: { type: 'timeseries', time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } }, ticks: { color: '#666' }, grid: { color: '#1a1a28' } },
-            y: { title: { display: true, text: '예측 수위비율 (%)', color: '#666' }, ticks: { color: '#666' }, grid: { color: '#1a1a28' }, suggestedMin: 0, suggestedMax: 100 }
-          },
-          plugins: {
-            legend: { labels: { color: '#ccc' } },
-            annotation: { annotations: { d: { type:'line', yMin:80, yMax:80, borderColor:'#e74c3c44', borderDash:[5,5] }, w: { type:'line', yMin:50, yMax:50, borderColor:'#f39c1244', borderDash:[5,5] } } }
-          }
-        }
-      });
-
-      // Summary
-      const firstStation = Object.keys(byStation)[0];
-      const fp = byStation[firstStation];
-      const latPreds = fp.filter(p => p.predicted_at === fp[0].predicted_at);
-      const dangerCount = latPreds.filter(p => p.predicted_status === 'danger').length;
-      const warnCount = latPreds.filter(p => p.predicted_status === 'warning').length;
-      document.getElementById('predSummary').textContent = dangerCount ? `위험 ${dangerCount}시간` : warnCount ? `주의 ${warnCount}시간` : '안전';
-
-      // Table
-      let html = '<table><thead><tr><th>관측소</th><th>+1h</th><th>+3h</th><th>+6h</th><th>+12h</th><th>신뢰도</th></tr></thead><tbody>';
-      for (const [stn, preds] of Object.entries(byStation)) {
-        const lp = preds.filter(p => p.predicted_at === preds[0].predicted_at);
-        const get = h => lp.find(p => p.prediction_hour === h);
-        const cell = h => { const p = get(h); if (!p) return '<td>-</td>'; const c = p.predicted_status==='danger'?'#e74c3c':p.predicted_status==='warning'?'#f39c12':'#2ecc71'; return `<td style="color:${c};font-weight:600">${p.predicted_ratio.toFixed(1)}%</td>`; };
-        const conf = get(1);
-        html += `<tr><td>${esc(stn)}</td>${cell(1)}${cell(3)}${cell(6)}${cell(12)}<td>${conf ? (conf.confidence*100).toFixed(0)+'%' : '-'}</td></tr>`;
-      }
-      html += '</tbody></table>';
-      document.getElementById('predTable').innerHTML = html;
-    }
-
-    // --- VERIFICATION (Guardian Agent) ---
-    let verifyChartInst = null;
-    async function loadVerification() {
-      const river = getSelectedRiver();
-      const preds = await query('flood_predictions',
-        `select=station,prediction_hour,predicted_ratio,predicted_status,target_time&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=300`);
-      const actuals = await query('river_readings',
-        `select=station,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=300`);
-
-      if (!preds.length || !actuals.length) {
-        document.getElementById('verifyDetail').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:0.5rem">검증 데이터 부족</div>';
-        return;
-      }
-
-      const actualMap = {};
-      actuals.forEach(a => {
-        const key = `${a.station}_${new Date(a.measured_at).toISOString().slice(0,13)}`;
-        if (!actualMap[key]) actualMap[key] = a;
-      });
-
-      const matched = [];
-      preds.forEach(p => {
-        const key = `${p.station}_${new Date(p.target_time).toISOString().slice(0,13)}`;
-        const actual = actualMap[key];
-        if (actual) {
-          matched.push({
-            station: p.station,
-            hour: p.prediction_hour,
-            predicted: p.predicted_ratio,
-            actual: actual.level_ratio,
-            predStatus: p.predicted_status,
-            actualStatus: actual.status,
-            error: Math.abs(p.predicted_ratio - actual.level_ratio),
-            time: p.target_time,
-          });
-        }
-      });
-
-      if (!matched.length) {
-        document.getElementById('verifyDetail').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:0.5rem">매칭된 예측-실측 쌍 없음 (데이터 축적 필요)</div>';
-        return;
-      }
-
-      const mae = matched.reduce((s,m) => s + m.error, 0) / matched.length;
-      const rmse = Math.sqrt(matched.reduce((s,m) => s + m.error*m.error, 0) / matched.length);
-      const mape = matched.reduce((s,m) => s + (m.actual > 0 ? m.error/m.actual*100 : 0), 0) / matched.length;
-      const statusMatch = matched.filter(m => m.predStatus === m.actualStatus).length;
-      const accuracy = (statusMatch / matched.length * 100);
-
-      document.getElementById('vMAE').textContent = mae.toFixed(2);
-      document.getElementById('vRMSE').textContent = rmse.toFixed(2);
-      document.getElementById('vMAPE').textContent = mape.toFixed(1) + '%';
-      document.getElementById('vAccuracy').textContent = accuracy.toFixed(1) + '%';
-      document.getElementById('verifyTime').textContent = `${matched.length}쌍 비교`;
-
-      const grade = mape < 10 ? '우수 Excellent' : mape < 20 ? '양호 Good' : mape < 30 ? '보통 Fair' : '미흡 Poor';
-      const gradeColor = mape < 10 ? '#2ecc71' : mape < 20 ? '#3ECF8E' : mape < 30 ? '#f39c12' : '#e74c3c';
-      document.getElementById('vMAPE').style.color = gradeColor;
-
-      // Chart: predicted vs actual
-      const recent = matched.slice(0, 30).reverse();
-      if (verifyChartInst) verifyChartInst.destroy();
-      verifyChartInst = new Chart(document.getElementById('verifyChart'), {
-        type: 'line',
-        data: {
-          labels: recent.map(m => new Date(m.time).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit' })),
-          datasets: [
-            { label: '실측', data: recent.map(m => m.actual), borderColor: '#2ecc71', backgroundColor: '#2ecc7122', fill: true, tension: 0.3, pointRadius: 3 },
-            { label: '예측', data: recent.map(m => m.predicted), borderColor: '#ff6ec4', backgroundColor: '#ff6ec422', borderDash: [5,3], fill: true, tension: 0.3, pointRadius: 3 },
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { x: { ticks: { color: '#666', maxRotation: 45 }, grid: { color: '#1a1a28' } }, y: { ticks: { color: '#666' }, grid: { color: '#1a1a28' } } },
-          plugins: { legend: { labels: { color: '#ccc' } } }
-        }
-      });
-
-      // Detail table
-      let dtbl = `<div style="font-size:0.75rem;color:#888;margin-bottom:0.3rem">검증 등급 Verification Grade: <span style="color:${gradeColor};font-weight:700">${grade}</span> (평균백분율오차 MAPE ${mape.toFixed(1)}%)</div>`;
-      dtbl += '<table><thead><tr><th>시각</th><th>관측소</th><th>예측</th><th>실측</th><th>오차</th><th>상태</th></tr></thead><tbody>';
-      matched.slice(0, 15).forEach(m => {
-        const t = new Date(m.time).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit' });
-        const ok = m.predStatus === m.actualStatus;
-        dtbl += `<tr><td>${t}</td><td>${esc(m.station)}</td><td>${m.predicted.toFixed(1)}%</td><td>${m.actual.toFixed(1)}%</td><td>${m.error.toFixed(1)}</td><td style="color:${ok?'#2ecc71':'#e74c3c'}">${ok?'✓':'✗'}</td></tr>`;
-      });
-      dtbl += '</tbody></table>';
-      document.getElementById('verifyDetail').innerHTML = dtbl;
-    }
-
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare(), loadRiskIndex(), loadPredictions(), loadVerification()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
       })
       .catch(err => console.error('Load error:', err));
 
-    document.getElementById('riverSelect').addEventListener('change', () => {
-      loadChart(); loadSpecies(); loadPredictions(); loadVerification();
-    });
-
     setInterval(() => {
-      Promise.all([loadMap(), loadTable(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality(), loadRiskIndex(), loadPredictions(), loadVerification()]);
+      Promise.all([loadMap(), loadTable(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality()]);
     }, 5 * 60 * 1000);
 
     if ('serviceWorker' in navigator) {

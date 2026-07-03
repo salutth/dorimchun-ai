@@ -113,10 +113,9 @@
   </style>
 </head>
 <body>
-<script src="gate.js"></script>
   <header>
     <h1><span>RiverWatch</span> 오늘의 카드</h1>
-    <a href="dashboard">대시보드</a>
+    <a href="/dashboard">대시보드</a>
   </header>
 
   <div class="container">
@@ -145,15 +144,15 @@
     <div class="actions" id="actions" style="display:none">
       <button class="btn-save" onclick="saveCard()">💾 저장</button>
       <button class="btn-share" onclick="shareCard()">📤 공유</button>
-      <button class="btn-report" onclick="location.href='report'">🔬 제보</button>
+      <button class="btn-report" onclick="location.href='/report'">🔬 제보</button>
     </div>
 
     <div class="date-label" id="dateLabel"></div>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tpnikydhphhpwtksxanm.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
+    const SUPABASE_URL = 'https://luczuisihsskyhhqgviy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
 
     const headers = {
       'apikey': SUPABASE_KEY,
@@ -406,7 +405,7 @@
       ctx.font = '13px -apple-system, Pretendard, sans-serif';
       ctx.fillText('RiverWatch — 도깨비3.0 시민과학 플랫폼', 50, footerY + 10);
       ctx.textAlign = 'right';
-      ctx.fillText('dorimchun-ai.pages.dev', W - 50, footerY + 10);
+      ctx.fillText('sakyowon-ai.pages.dev', W - 50, footerY + 10);
       ctx.textAlign = 'left';
 
       // Show

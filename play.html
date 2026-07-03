@@ -250,9 +250,8 @@
   </style>
 </head>
 <body>
-<script src="gate.js"></script>
   <div class="top-bar">
-    <a href="dashboard">← 대시보드</a>
+    <a href="/dashboard">← 대시보드</a>
     <div class="score-display">
       <span class="score" id="scoreLabel">0점</span>
       <span class="streak" id="streakLabel"></span>
@@ -304,14 +303,14 @@
       <div class="share-row">
         <button class="share-btn primary" onclick="startGame()">다시 도전</button>
         <button class="share-btn" onclick="shareResult()">결과 공유</button>
-        <button class="share-btn" onclick="location.href='dashboard'">대시보드</button>
+        <button class="share-btn" onclick="location.href='/dashboard'">대시보드</button>
       </div>
     </div>
   </div>
 
   <script>
-    const SB = 'https://tpnikydhphhpwtksxanm.supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
+    const SB = 'https://luczuisihsskyhhqgviy.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
     const H = {'apikey':KEY,'Authorization':`Bearer ${KEY}`};
 
     let allSpecies = [];
@@ -563,7 +562,7 @@
 
     function shareResult() {
       const pct = Math.round(score / questions.length * 100);
-      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://dorimchun-ai.pages.dev/play.html`;
+      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://sakyowon-ai.pages.dev/play.html`;
 
       if (navigator.share) {
         navigator.share({ title: '하천 생물 퀴즈 결과', text }).catch(() => {});

@@ -203,12 +203,11 @@
   </style>
 </head>
 <body>
-<script src="gate.js"></script>
   <header>
     <h1><span>RiverWatch</span> 미션</h1>
     <div class="nav-links">
-      <a href="report">제보</a>
-      <a href="dashboard">대시보드</a>
+      <a href="/report">제보</a>
+      <a href="/dashboard">대시보드</a>
     </div>
   </header>
 
@@ -235,13 +234,13 @@
   </div>
 
   <div class="cta-bar">
-    <a href="report" class="cta-primary">🔬 생물 제보하기</a>
-    <a href="today" class="cta-secondary">📊 오늘의 카드</a>
+    <a href="/report" class="cta-primary">🔬 생물 제보하기</a>
+    <a href="/today" class="cta-secondary">📊 오늘의 카드</a>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tpnikydhphhpwtksxanm.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
+    const SUPABASE_URL = 'https://luczuisihsskyhhqgviy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
 
     async function query(table, params) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {

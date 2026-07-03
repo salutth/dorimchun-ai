@@ -9,4 +9,3 @@ make_pptx.js
 package.json
 package-lock.json
 ml/*.pt
-ml/*.onnx

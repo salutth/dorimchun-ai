@@ -187,10 +187,9 @@
   </style>
 </head>
 <body>
-<script src="gate.js"></script>
   <header>
     <h1><span>RiverWatch</span> 분석 보고서</h1>
-    <a href="dashboard">대시보드</a>
+    <a href="/dashboard">대시보드</a>
   </header>
 
   <div class="container">
@@ -240,8 +239,8 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tpnikydhphhpwtksxanm.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwbmlreWRocGhocHd0a3N4YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTM0MjYsImV4cCI6MjA5ODA2OTQyNn0.Bv036PwqF9lRyZgYQlt-WFMd6BCDv4JEmvq--hVhscY';
+    const SUPABASE_URL = 'https://luczuisihsskyhhqgviy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
 
     async function sbGet(table, params = '') {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
@@ -258,7 +257,7 @@
 
     async function loadReport() {
       const [ehi, species, readings, wq, alerts] = await Promise.all([
-        sbGet('ehi_scores', 'select=*&order=calculated_at.desc&limit=100'),
+        sbGet('ehi_scores', 'select=*&order=created_at.desc&limit=100'),
         sbGet('species_observations', 'select=taxon_name,river,is_invasive,observed_at,source&order=observed_at.desc&limit=1000'),
         sbGet('river_readings', 'select=station,river,water_level,level_ratio,status&order=id.desc&limit=500'),
         sbGet('water_quality', 'select=*&order=collected_at.desc&limit=500'),
