@@ -95,19 +95,19 @@ def parse_weather(data, river):
         sky = WMO_CODES.get(code, str(code))
         precip = precips[i] if i < len(precips) else 0
 
+        rain_prob = rain_probs[i] if i < len(rain_probs) else 0
         records.append({
-            "zone_code": f"{river}_openmeteo",
-            "zone_name": river,
-            "river": river,
-            "forecast_hour": hour_part,
+            "region": river,
+            "forecast_date": date_part,
             "temperature": temps[i] if i < len(temps) else None,
-            "sky_status": sky,
-            "rain_probability": rain_probs[i] if i < len(rain_probs) else 0,
-            "rain_amount": str(precip),
+            "precipitation": precip,
             "humidity": humids[i] if i < len(humids) else None,
             "wind_speed": winds[i] if i < len(winds) else None,
-            "forecast_date": date_part,
+            "weather_condition": f"{sky} {hour_part} p{int(rain_prob)}%",
             "collected_at": datetime.now().isoformat(),
+            "_rain_probability": rain_prob,
+            "_forecast_hour": hour_part,
+            "_sky_status": sky,
         })
 
     return records
@@ -124,7 +124,7 @@ def save_to_supabase(records):
     batch_size = 100
     saved = 0
     for i in range(0, len(records), batch_size):
-        batch = records[i : i + batch_size]
+        batch = [{k: v for k, v in r.items() if not k.startswith("_")} for r in records[i : i + batch_size]]
         body = json.dumps(batch, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(
             f"{sb_url}/rest/v1/weather_forecasts",
@@ -171,9 +171,9 @@ def main():
             print(f"  {river:8s}  ❌ 파싱 실패")
             continue
 
-        max_rain_prob = max(r["rain_probability"] for r in records)
-        max_precip = max(float(r["rain_amount"]) for r in records)
-        rain_hours = [r for r in records if r["rain_probability"] >= 60]
+        max_rain_prob = max(r["_rain_probability"] for r in records)
+        max_precip = max(r["precipitation"] for r in records)
+        rain_hours = [r for r in records if r["_rain_probability"] >= 60]
 
         status = "🟢"
         if max_rain_prob >= 80 or max_precip >= 10:
@@ -187,10 +187,10 @@ def main():
             rain_alerts.append({
                 "river": river,
                 "date": r["forecast_date"],
-                "hour": r["forecast_hour"],
-                "prob": r["rain_probability"],
-                "precip": r["rain_amount"],
-                "sky": r["sky_status"],
+                "hour": r["_forecast_hour"],
+                "prob": r["_rain_probability"],
+                "precip": r["precipitation"],
+                "sky": r["_sky_status"],
             })
 
         all_records.extend(records)
@@ -206,7 +206,7 @@ def main():
         print(f"  {'-'*60}")
         shown = sorted(rain_alerts, key=lambda x: (-x["prob"], x["date"], x["hour"]))[:20]
         for a in shown:
-            print(f"  {a['river']:8s}  {a['date']:12s}  {a['hour']:6s}  {a['prob']:3d}%   {a['precip']:>5s}mm  {a['sky']}")
+            print(f"  {a['river']:8s}  {a['date']:12s}  {a['hour']:6s}  {int(a['prob']):3d}%   {a['precip']:5.1f}mm  {a['sky']}")
         if len(rain_alerts) > 20:
             print(f"  ... 외 {len(rain_alerts) - 20}건")
     else:

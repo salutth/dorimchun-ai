@@ -190,20 +190,17 @@ def save_to_supabase(assets):
 
     records = []
     for a in assets:
-        priority = RISK_PRIORITY.get(a["grade"], 1)
         records.append(
             {
                 "name": a["name"],
                 "name_hanja": a["name_hanja"],
-                "grade": a["grade"],
-                "grade_code": a["grade_code"],
-                "district": a["district"],
+                "category": a["grade"],
+                "type": a["grade_code"],
+                "address": a["district"],
                 "latitude": a["latitude"],
                 "longitude": a["longitude"],
-                "nearest_river": a["nearest_river"],
-                "distance_km": a["distance_km"],
-                "risk_priority": priority,
-                "asset_code": a["asset_code"],
+                "river": a["nearest_river"],
+                "description": f"거리:{a['distance_km']}km 코드:{a['asset_code']}",
                 "collected_at": datetime.now().isoformat(),
             }
         )

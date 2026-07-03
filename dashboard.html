@@ -295,6 +295,17 @@
     </div>
   </header>
 
+  <div id="floodAlertBanner" style="display:none;margin:0.5rem 1rem;padding:0.8rem 1.2rem;background:linear-gradient(135deg,#2a1a1a,#1a0a0a);border:1px solid #ff4444;border-radius:12px;animation:pulse 2s infinite">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+      <span style="font-size:1rem;font-weight:600;color:#ff6b6b">🚨 침수 위험 경보</span>
+      <span id="alertTime" style="font-size:0.75rem;color:#888"></span>
+    </div>
+    <div id="alertList" style="font-size:0.85rem;line-height:1.6"></div>
+  </div>
+  <style>
+    @keyframes pulse { 0%,100% { border-color: #ff4444; } 50% { border-color: #ff8888; } }
+  </style>
+
   <div class="grid">
     <div class="card">
       <div class="card-header">
@@ -597,6 +608,28 @@
 
     const statusColors = { danger: '#e74c3c', warning: '#f39c12', safe: '#2ecc71', unknown: '#666' };
     const statusLabels = { danger: '위험', warning: '주의', safe: '안전', unknown: '?' };
+
+    async function loadFloodAlerts() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/flood_alerts?select=*&order=collected_at.desc&limit=20`, { headers });
+        const alerts = await res.json();
+        if (!alerts.length) return;
+        const banner = document.getElementById('floodAlertBanner');
+        const list = document.getElementById('alertList');
+        const icons = { critical: '🔴', danger: '🟠', warning: '🟡' };
+        const labels = { critical: '긴급', danger: '위험', warning: '주의' };
+        const latest = alerts[0].collected_at;
+        document.getElementById('alertTime').textContent = new Date(latest).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        list.innerHTML = alerts.map(a => {
+          const icon = icons[a.alert_level] || '⚪';
+          const label = labels[a.alert_level] || a.alert_level;
+          const ratio = a.threshold > 0 ? ((a.water_level / a.threshold) * 100).toFixed(1) : '-';
+          return `<div style="margin-bottom:4px">${icon} <b>[${label}]</b> ${a.station} (${a.river}) — ${a.message || ''}</div>`;
+        }).join('');
+        banner.style.display = 'block';
+      } catch(e) { console.error('flood alerts:', e); }
+    }
+    loadFloodAlerts();
 
     function esc(str) {
       const d = document.createElement('div');

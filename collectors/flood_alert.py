@@ -203,8 +203,8 @@ def format_telegram_message(alerts):
             lines.append(f"  📍 {a['station']} ({a['river']}) — {a['reasons'][0]}")
         lines.append("")
 
-    lines.append(f"📊 상세: https://dorimchun-ai.pages.dev/river-on")
-    lines.append(f"💧 대시보드: https://dorimchun-ai.pages.dev/dashboard")
+    lines.append(f"📊 상세: https://sakyowon-ai.pages.dev/river-on")
+    lines.append(f"💧 대시보드: https://sakyowon-ai.pages.dev/dashboard")
 
     return "\n".join(lines)
 
@@ -221,15 +221,51 @@ def main():
     print("  📡 데이터 수집 중...")
     readings = sb_query("river_readings", "select=*&order=measured_at.desc&limit=50")
     today = datetime.now().strftime("%Y-%m-%d")
-    weather = sb_query(
+    weather_raw = sb_query(
         "weather_forecasts",
-        f"select=river,forecast_hour,rain_probability,rain_amount,sky_status"
+        f"select=region,precipitation,weather_condition"
         f"&forecast_date=eq.{today}&limit=500"
     )
-    assets = sb_query(
+    weather = []
+    for w in weather_raw:
+        wc = w.get("weather_condition", "")
+        parts = wc.rsplit(" p", 1)
+        hour = ""
+        rain_prob = 0
+        if len(parts) >= 2:
+            try:
+                rain_prob = int(parts[1].replace("%", ""))
+            except ValueError:
+                pass
+            sky_parts = parts[0].rsplit(" ", 1)
+            if len(sky_parts) == 2:
+                hour = sky_parts[1]
+        weather.append({
+            "river": w.get("region", ""),
+            "forecast_hour": hour,
+            "rain_probability": rain_prob,
+            "rain_amount": str(w.get("precipitation", 0)),
+            "sky_status": parts[0] if parts else "",
+        })
+    assets_raw = sb_query(
         "cultural_assets",
-        "select=name,grade,nearest_river,distance_km,risk_priority&limit=500"
+        "select=name,category,river,description&limit=500"
     )
+    assets = []
+    for a in assets_raw:
+        dist = 99.0
+        desc = a.get("description", "") or ""
+        if "거리:" in desc:
+            try:
+                dist = float(desc.split("거리:")[1].split("km")[0])
+            except (ValueError, IndexError):
+                pass
+        assets.append({
+            "name": a.get("name", ""),
+            "grade": a.get("category", ""),
+            "nearest_river": a.get("river", ""),
+            "distance_km": dist,
+        })
 
     print(f"  수위: {len(readings)}건 | 기상: {len(weather)}건 | 문화재: {len(assets)}건")
     print()
@@ -243,7 +279,7 @@ def main():
 
     assets_by_river = {}
     for a in assets:
-        r = a.get("nearest_river", "")
+        r = a.get("nearest_river", "") or a.get("river", "")
         if r not in assets_by_river:
             assets_by_river[r] = []
         assets_by_river[r].append(a)
@@ -292,17 +328,18 @@ def main():
 
         alert_records = []
         for a in alerts:
+            reasons_str = " | ".join(a["reasons"])
+            asset_info = ""
+            if a["high_grade_names"]:
+                asset_info = f" 문화재: {', '.join(a['high_grade_names'])}"
             alert_records.append({
-                "station": a["station"],
                 "river": a["river"],
+                "station": a["station"],
                 "alert_level": a["level"],
-                "water_ratio": a["ratio"],
-                "rain_probability": a["rain_prob"],
-                "nearby_assets": a["nearby_assets_count"],
-                "high_grade_assets": a["high_grade_count"],
-                "reasons": json.dumps(a["reasons"], ensure_ascii=False),
-                "notified": bool(tg_token and tg_chat),
-                "created_at": datetime.now().isoformat(),
+                "water_level": a["water_level"],
+                "threshold": a["embankment"],
+                "message": f"[{a['gu']}] {reasons_str}{asset_info}",
+                "issued_at": datetime.now().isoformat(),
             })
         saved = sb_insert("flood_alerts", alert_records)
         if saved:
