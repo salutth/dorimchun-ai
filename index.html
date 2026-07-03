@@ -3,85 +3,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>살루트 — AI 활동가</title>
+  <title>RiverWatch — 도림천 AI 하천 모니터링</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, 'Pretendard', sans-serif;
-      background: #0f0f0f;
+      background: #0a0a0f;
       color: #e0e0e0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    .card {
-      max-width: 480px;
-      width: 90%;
-      padding: 3rem 2rem;
+    header {
       text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+      border-bottom: 1px solid #1a1a2e;
     }
-    .avatar {
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff6ec4, #7873f5);
-      margin: 0 auto 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
+    header .logo { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    header h1 span { color: #7873f5; }
+    header p { color: #888; font-size: 0.9rem; margin-top: 0.4rem; }
+    .status-bar {
+      display: flex; justify-content: center; gap: 1.5rem;
+      margin-top: 1rem; font-size: 0.8rem; color: #666;
     }
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
+    .status-bar .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .dot.green { background: #2ecc71; }
+    .dot.yellow { background: #f1c40f; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+    .section-title {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;
+      color: #666; margin: 2rem 0 1rem; padding-left: 0.5rem;
     }
-    .bio {
-      color: #999;
-      font-size: 1rem;
-      margin-bottom: 2rem;
-      line-height: 1.6;
-    }
-    .links {
-      display: flex;
-      flex-direction: column;
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 0.75rem;
     }
-    .links a {
-      display: block;
-      padding: 0.9rem 1.2rem;
-      border: 1px solid #333;
-      border-radius: 12px;
-      color: #e0e0e0;
-      text-decoration: none;
-      font-size: 1rem;
-      transition: background 0.2s, border-color 0.2s;
+    .card {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.2rem;
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 14px;
+      text-decoration: none; color: #e0e0e0;
+      transition: all 0.2s;
     }
-    .links a:hover {
+    .card:hover {
       background: #1a1a2e;
       border-color: #7873f5;
+      transform: translateY(-2px);
     }
+    .card .icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .card .info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 2px; }
+    .card .info p { font-size: 0.78rem; color: #888; line-height: 1.4; }
+
+    .icon-blue { background: rgba(120,115,245,0.15); }
+    .icon-green { background: rgba(46,204,113,0.15); }
+    .icon-orange { background: rgba(255,165,0,0.15); }
+    .icon-red { background: rgba(231,76,60,0.15); }
+    .icon-purple { background: rgba(155,89,182,0.15); }
+    .icon-cyan { background: rgba(0,188,212,0.15); }
+
+    .external-links {
+      display: flex; justify-content: center; gap: 1rem;
+      margin-top: 2rem; flex-wrap: wrap;
+    }
+    .ext-link {
+      padding: 0.6rem 1.2rem;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #aaa; font-size: 0.85rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .ext-link:hover { border-color: #7873f5; color: #e0e0e0; }
+
     footer {
-      margin-top: 2.5rem;
-      font-size: 0.8rem;
-      color: #555;
+      text-align: center; padding: 2rem 1rem;
+      font-size: 0.75rem; color: #444;
+      border-top: 1px solid #1a1a2e;
+    }
+    footer a { color: #666; text-decoration: none; }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.3rem; }
     }
   </style>
 </head>
 <body>
 <script src="gate.js"></script>
-  <div class="card">
-    <div class="avatar">🤖</div>
-    <h1>살루트</h1>
-    <p class="bio">AI 활동가 1기 — 사교원에서 AI와 함께 배우고 만듭니다.</p>
-    <div class="links">
-      <a href="https://quartz-33c.pages.dev" target="_blank">📝 내 위키</a>
-      <a href="https://github.com/salutth" target="_blank">💻 GitHub</a>
-      <a href="https://github.com/salutth/dorimchun-ai" target="_blank">📂 프로젝트 레포</a>
-      <a href="dashboard">🌊 RiverWatch 대시보드</a>
-    </div>
-    <footer>© 2026 살루트</footer>
+
+<header>
+  <div class="logo">🌊</div>
+  <h1>River<span>Watch</span></h1>
+  <p>도림천 AI 하천 모니터링 플랫폼</p>
+  <div class="status-bar">
+    <span><span class="dot green"></span> 시스템 정상</span>
+    <span><span class="dot green"></span> 매시간 자동 수집</span>
+    <span>Beta v1.0</span>
   </div>
+</header>
+
+<div class="container">
+
+  <div class="section-title">실시간 모니터링</div>
+  <div class="grid">
+    <a class="card" href="dashboard">
+      <div class="icon icon-blue">📊</div>
+      <div class="info">
+        <h3>대시보드</h3>
+        <p>수위 현황 · AI 예측 · K-SAFE 위험지수</p>
+      </div>
+    </a>
+    <a class="card" href="today">
+      <div class="icon icon-green">📅</div>
+      <div class="info">
+        <h3>오늘의 하천</h3>
+        <p>오늘 수집된 데이터 한눈에 보기</p>
+      </div>
+    </a>
+    <a class="card" href="river-on">
+      <div class="icon icon-cyan">🗺️</div>
+      <div class="info">
+        <h3>하천ON 지도</h3>
+        <p>문화재 · 시민측정 · 관측소 마커</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-title">분석 · 보고</div>
+  <div class="grid">
+    <a class="card" href="analysis">
+      <div class="icon icon-purple">🔬</div>
+      <div class="info">
+        <h3>분석 뷰어</h3>
+        <p>수질 · 생태건강성 · 트렌드 분석</p>
+      </div>
+    </a>
+    <a class="card" href="report">
+      <div class="icon icon-orange">📋</div>
+      <div class="info">
+        <h3>자동 보고서</h3>
+        <p>일간/주간 보고서 자동 생성</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-title">참여 · 학습</div>
+  <div class="grid">
+    <a class="card" href="play">
+      <div class="icon icon-green">🎮</div>
+      <div class="info">
+        <h3>하천 탐험</h3>
+        <p>시민 참여형 생물 관찰 · 퀴즈</p>
+      </div>
+    </a>
+    <a class="card" href="mission">
+      <div class="icon icon-red">🎯</div>
+      <div class="info">
+        <h3>미션</h3>
+        <p>시민과학 미션 · 활동 기록</p>
+      </div>
+    </a>
+    <a class="card" href="platform">
+      <div class="icon icon-blue">🏗️</div>
+      <div class="info">
+        <h3>플랫폼 현황</h3>
+        <p>시스템 상태 · 수집기 헬스체크</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="external-links">
+    <a class="ext-link" href="https://quartz-33c.pages.dev" target="_blank">📝 위키</a>
+    <a class="ext-link" href="https://github.com/salutth/dorimchun-ai" target="_blank">💻 GitHub</a>
+    <a class="ext-link" href="https://github.com/salutth" target="_blank">👤 프로필</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 살루트 · AI 활동가 1기 · 사교원</p>
+  <p style="margin-top:0.3rem"><a href="https://github.com/salutth/dorimchun-ai">dorimchun-ai</a></p>
+</footer>
+
 </body>
 </html>
