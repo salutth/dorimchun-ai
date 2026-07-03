@@ -82,7 +82,7 @@ def supabase_post(table, records):
     req.add_header("apikey", key)
     req.add_header("Authorization", f"Bearer {key}")
     req.add_header("Content-Type", "application/json")
-    req.add_header("Prefer", "return=minimal")
+    req.add_header("Prefer", "return=minimal,resolution=merge-duplicates")
 
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:

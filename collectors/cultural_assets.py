@@ -217,7 +217,7 @@ def save_to_supabase(assets):
                 "apikey": sb_key,
                 "Authorization": f"Bearer {sb_key}",
                 "Content-Type": "application/json",
-                "Prefer": "return=minimal",
+                "Prefer": "return=minimal,resolution=merge-duplicates",
             },
             method="POST",
         )
