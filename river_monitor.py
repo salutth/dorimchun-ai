@@ -178,6 +178,7 @@ def main():
             "level_ratio": round(ratio, 1),
             "status": status,
             "measured_at": measured_at,
+            "collected_at": datetime.now().isoformat(),
         })
 
     first_measure = rows[0].get("DTRSM_DATA_CLCT_TM", "") if rows else ""

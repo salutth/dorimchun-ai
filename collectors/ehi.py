@@ -258,6 +258,7 @@ def main():
             "grade": grade,
             "species_count": len(set(s.get("taxon_name", "") for s in sp)),
             "reading_count": len(rd),
+            "calculated_at": datetime.now().isoformat(),
         })
 
     print(f"\n  산출 기준: 생물다양성 {int(EHI_WEIGHTS['biodiversity']*100)}% + "

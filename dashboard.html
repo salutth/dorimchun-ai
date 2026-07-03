@@ -651,7 +651,7 @@
 
     async function loadMap() {
       const rows = await query('river_readings',
-        'select=station,river,gu,water_level,level_ratio,status,measured_at&order=id.desc&limit=21');
+        'select=station,river,gu,water_level,level_ratio,status,measured_at,collected_at&order=id.desc&limit=21');
 
       const seen = new Set();
       let dangerN = 0, warnN = 0, safeN = 0;
@@ -694,10 +694,12 @@
         <span class="badge safe">${safeN} 안전</span>
       `;
 
-      if (rows.length > 0 && rows[0].measured_at) {
-        const t = new Date(rows[0].measured_at);
+      if (rows.length > 0) {
+        const fmt = (d) => d.toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        const mAt = rows[0].measured_at ? fmt(new Date(rows[0].measured_at)) : '';
+        const cAt = rows[0].collected_at ? fmt(new Date(rows[0].collected_at)) : '';
         document.getElementById('mapTime').textContent =
-          t.toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          cAt ? `수집 ${cAt}` : (mAt ? `측정 ${mAt}` : '');
       }
 
       // 시민 측정 마커

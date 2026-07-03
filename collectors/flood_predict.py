@@ -68,15 +68,18 @@ def sb_insert(table, records):
     sb_key = os.environ.get("SUPABASE_KEY")
     if not sb_url or not sb_key or not records:
         return 0
+    conflict = ""
+    if table == "flood_predictions":
+        conflict = "?on_conflict=station,predicted_at,prediction_hour"
     body = json.dumps(records, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        f"{sb_url}/rest/v1/{table}",
+        f"{sb_url}/rest/v1/{table}{conflict}",
         data=body,
         headers={
             "apikey": sb_key,
             "Authorization": f"Bearer {sb_key}",
             "Content-Type": "application/json",
-            "Prefer": "return=minimal",
+            "Prefer": "return=minimal,resolution=merge-duplicates",
         },
         method="POST",
     )
