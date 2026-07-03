@@ -869,7 +869,7 @@
     // --- EHI ---
     async function loadEHI() {
       const rows = await query('ehi_scores',
-        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,created_at&order=created_at.desc&limit=30');
+        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&order=calculated_at.desc&limit=30');
 
       const latest = {};
       rows.forEach(r => {
@@ -1120,7 +1120,7 @@
 
       if (metric === 'ehi') {
         const rows = await query('ehi_scores',
-          'select=river,ehi_score,grade&order=created_at.desc&limit=50');
+          'select=river,ehi_score,grade&order=calculated_at.desc&limit=50');
         const latest = {};
         rows.forEach(r => { if (r.river && !latest[r.river]) latest[r.river] = r; });
         const sorted = Object.values(latest).sort((a, b) => (b.ehi_score||0) - (a.ehi_score||0));
