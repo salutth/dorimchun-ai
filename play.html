@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta property="og:title" content="서울 하천 생물 퀴즈">
   <meta property="og:description" content="사진 속 생물은 어느 하천에서 발견됐을까?">
-  <title>RiverWatch — 하천 퀴즈 🎮</title>
+  <title>RiverWatch — 서울하천 AI 모니터링</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -562,7 +562,7 @@
 
     function shareResult() {
       const pct = Math.round(score / questions.length * 100);
-      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://sakyowon-ai.pages.dev/play.html`;
+      const text = `🐟 서울 하천 생물 퀴즈 ${score}/${questions.length} (${pct}%)\n최대 연속: ${maxStreak}회\nhttps://dorimchun-ai.pages.dev/play.html`;
 
       if (navigator.share) {
         navigator.share({ title: '하천 생물 퀴즈 결과', text }).catch(() => {});
