@@ -211,7 +211,7 @@ def save_to_supabase(assets):
         batch = records[i : i + batch_size]
         body = json.dumps(batch, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(
-            f"{sb_url}/rest/v1/cultural_assets",
+            f"{sb_url}/rest/v1/cultural_assets?on_conflict=name,river",
             data=body,
             headers={
                 "apikey": sb_key,

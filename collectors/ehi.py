@@ -76,7 +76,9 @@ def supabase_post(table, records):
     if not url_base or not key or not records:
         return 0
 
-    url = f"{url_base}/rest/v1/{table}"
+    conflict = "river,calculated_at" if table == "ehi_scores" else ""
+    qs = f"?on_conflict={conflict}" if conflict else ""
+    url = f"{url_base}/rest/v1/{table}{qs}"
     payload = json.dumps(records).encode("utf-8")
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("apikey", key)

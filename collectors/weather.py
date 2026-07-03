@@ -127,7 +127,7 @@ def save_to_supabase(records):
         batch = [{k: v for k, v in r.items() if not k.startswith("_")} for r in records[i : i + batch_size]]
         body = json.dumps(batch, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(
-            f"{sb_url}/rest/v1/weather_forecasts",
+            f"{sb_url}/rest/v1/weather_forecasts?on_conflict=region,forecast_date,weather_condition",
             data=body,
             headers={
                 "apikey": sb_key,
