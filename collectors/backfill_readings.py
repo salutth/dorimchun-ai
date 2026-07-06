@@ -64,14 +64,13 @@ def sb_upsert(table, records):
         return 0
     body = json.dumps(records, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        f"{sb_url}/rest/v1/{table}",
+        f"{sb_url}/rest/v1/{table}?on_conflict=station,measured_at",
         data=body,
         headers={
             "apikey": sb_key,
             "Authorization": f"Bearer {sb_key}",
             "Content-Type": "application/json",
             "Prefer": "return=minimal,resolution=ignore-duplicates",
-            "On-Conflict": "station,measured_at",
         },
         method="POST",
     )

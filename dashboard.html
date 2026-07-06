@@ -625,7 +625,7 @@
           const icon = icons[a.alert_level] || '⚪';
           const label = labels[a.alert_level] || a.alert_level;
           const ratio = a.threshold > 0 ? ((a.water_level / a.threshold) * 100).toFixed(1) : '-';
-          return `<div style="margin-bottom:4px">${icon} <b>[${label}]</b> ${a.station} (${a.river}) — ${a.message || ''}</div>`;
+          return `<div style="margin-bottom:4px">${icon} <b>[${esc(label)}]</b> ${esc(a.station)} (${esc(a.river)}) — ${esc(a.message || '')}</div>`;
         }).join('');
         banner.style.display = 'block';
       } catch(e) { console.error('flood alerts:', e); }

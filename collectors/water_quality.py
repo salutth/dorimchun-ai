@@ -79,14 +79,14 @@ def save_to_supabase(records):
 
     body = json.dumps(records, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        f"{sb_url}/rest/v1/water_quality",
+        f"{sb_url}/rest/v1/water_quality?on_conflict=station_name,measured_at",
         data=body,
         method="POST",
         headers={
             "apikey": sb_key,
             "Authorization": f"Bearer {sb_key}",
             "Content-Type": "application/json",
-            "Prefer": "resolution=merge-duplicates",
+            "Prefer": "return=minimal,resolution=merge-duplicates",
         },
     )
     ctx = ssl.create_default_context()

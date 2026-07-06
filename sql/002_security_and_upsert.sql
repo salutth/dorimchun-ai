@@ -26,10 +26,10 @@ ALTER TABLE cultural_assets
   ADD CONSTRAINT uq_cultural_assets_name_river
   UNIQUE (name, river);
 
--- ehi_scores: 하천별 1시간 이내 중복 방지
+-- ehi_scores: 하천별 산출시각 중복 방지
 ALTER TABLE ehi_scores
   ADD CONSTRAINT uq_ehi_river_time
-  UNIQUE (river, collected_at);
+  UNIQUE (river, calculated_at);
 
 -- ============================================================
 -- PART 2: RLS 정책 강화 (RiverWatch 테이블)

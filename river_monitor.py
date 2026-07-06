@@ -66,14 +66,13 @@ def save_to_supabase(records):
         print("  [Supabase] URL/KEY 없음 — 저장 건너뜀")
         return 0
 
-    url = f"{supabase_url}/rest/v1/river_readings"
+    url = f"{supabase_url}/rest/v1/river_readings?on_conflict=station,measured_at"
     payload = json.dumps(records).encode("utf-8")
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("apikey", supabase_key)
     req.add_header("Authorization", f"Bearer {supabase_key}")
     req.add_header("Content-Type", "application/json")
     req.add_header("Prefer", "return=minimal,resolution=ignore-duplicates")
-    req.add_header("On-Conflict", "station,measured_at")
 
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
