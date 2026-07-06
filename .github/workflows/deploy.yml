@@ -1,0 +1,23 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy . --project-name=dorimchun-ai --branch=master --commit-hash=${{ github.sha }}
