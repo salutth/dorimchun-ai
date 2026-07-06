@@ -301,7 +301,7 @@
 
     async function loadAllData() {
       speciesData = await query('species_observations',
-        'select=taxon_name,common_name,observer,observed_at,is_invasive,river,image_url,inaturalist_id&order=observed_at.desc&limit=1000');
+        'select=taxon_name,common_name,observer,observed_at,is_invasive,river,inaturalist_id&order=observed_at.desc&limit=1000');
 
       const uniqueSpecies = new Set();
       const rivers = new Set();
