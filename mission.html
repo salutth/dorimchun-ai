@@ -271,18 +271,7 @@
       });
     });
 
-    const MISSION_TARGETS = [
-      { name: '왜가리', hint: '하천변 큰 새, 회색빛 몸' },
-      { name: '잉어', hint: '물속에서 가끔 튀어오름' },
-      { name: '거북', hint: '바위 위에서 일광욕' },
-      { name: '백로', hint: '흰색 긴 다리 새' },
-      { name: '오리', hint: '물 위에 떠서 헤엄' },
-      { name: '개구리', hint: '풀숲에서 울음소리' },
-      { name: '잠자리', hint: '물가 위를 비행' },
-      { name: '나비', hint: '꽃 주변에서 관찰' },
-      { name: '민물게', hint: '돌 아래 숨어 있음' },
-      { name: '수달', hint: '매우 드묾! 목격 시 즉시 제보' },
-    ];
+    let MISSION_TARGETS = [];
 
     const MISSIONS = [
       { id: 'first_obs', icon: '🔬', name: '첫 관찰', desc: '생물 1종 이상 관찰하기', pts: 10, check: s => s.totalSpecies >= 1 },
@@ -308,6 +297,7 @@
 
     let speciesData = [];
     let statsCache = {};
+    let selectedRiver = '전체';
 
     async function loadAllData() {
       speciesData = await query('species_observations',
@@ -319,10 +309,17 @@
       let invasiveCount = 0;
       let birdCount = 0, fishCount = 0;
       const observerStats = {};
+      const riverSpecies = {};
 
       speciesData.forEach(s => {
         if (s.taxon_name) uniqueSpecies.add(s.taxon_name);
-        if (s.river) rivers.add(s.river);
+        if (s.river) {
+          rivers.add(s.river);
+          if (!riverSpecies[s.river]) riverSpecies[s.river] = {};
+          if (s.taxon_name && !riverSpecies[s.river][s.taxon_name]) {
+            riverSpecies[s.river][s.taxon_name] = s;
+          }
+        }
         if (s.river && s.river.includes('도림') && s.taxon_name) dorimSpecies.add(s.taxon_name);
         if (s.is_invasive) invasiveCount++;
         const cn = (s.common_name || '').toLowerCase();
@@ -337,25 +334,27 @@
         if (s.river) observerStats[obs].rivers.add(s.river);
       });
 
-      const recentSpecies = new Map();
+      // Build dynamic checklist from DB
+      const allSpeciesMap = {};
       speciesData.forEach(s => {
-        const cn = (s.common_name || '').toLowerCase();
-        if (cn && !recentSpecies.has(cn)) recentSpecies.set(cn, s);
-        const tn = (s.taxon_name || '').toLowerCase();
-        if (tn && !recentSpecies.has(tn)) recentSpecies.set(tn, s);
+        if (!s.taxon_name) return;
+        if (!allSpeciesMap[s.taxon_name]) allSpeciesMap[s.taxon_name] = s;
       });
+      MISSION_TARGETS = Object.values(allSpeciesMap).map(s => ({
+        name: s.common_name || s.taxon_name,
+        taxon: s.taxon_name,
+        hint: s.river ? `${s.river}에서 관찰됨` : '',
+        river: s.river || '',
+      }));
+      MISSION_TARGETS.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-      const checklist = MISSION_TARGETS.map(t => {
-        let found = null;
-        for (const [key, s] of recentSpecies) {
-          if (key.includes(t.name) || t.name.includes(key)) { found = s; break; }
-        }
-        return { ...t, found };
-      });
+      const checklist = buildChecklist();
 
       statsCache = {
         totalSpecies: uniqueSpecies.size,
         rivers: rivers.size,
+        riverList: sorted(rivers),
+        riverSpecies,
         invasiveCount,
         dorimSpecies: dorimSpecies.size,
         birdCount, fishCount,
@@ -369,6 +368,16 @@
       buildSpeciesTab();
       buildBadges();
       buildRanking();
+    }
+
+    function sorted(set) { return [...set].sort((a, b) => a.localeCompare(b, 'ko')); }
+
+    function buildChecklist() {
+      let targets = MISSION_TARGETS;
+      if (selectedRiver !== '전체') {
+        targets = targets.filter(t => t.river === selectedRiver);
+      }
+      return targets.map(t => ({ ...t, found: t.taxon ? true : false }));
     }
 
     function buildMissions() {
@@ -408,17 +417,14 @@
 
     function buildSpeciesTab() {
       const s = statsCache;
-      const checklist = s.checklist;
-      const foundMission = s.checklistFound;
+      const checklist = buildChecklist();
+      const totalCount = checklist.length;
+      const foundCount = checklist.filter(c => c.found).length;
       const circumference = 2 * Math.PI * 38;
-      const offset = circumference * (1 - foundMission / MISSION_TARGETS.length);
+      const ratio = totalCount > 0 ? foundCount / totalCount : 0;
+      const offset = circumference * (1 - ratio);
 
-      let encouragement = '';
-      if (foundMission === 0) encouragement = '첫 번째 생물을 찾아보세요!';
-      else if (foundMission < 3) encouragement = '좋은 시작이에요!';
-      else if (foundMission < 6) encouragement = '절반 가까이 왔어요!';
-      else if (foundMission < 10) encouragement = '거의 다 찾았어요!';
-      else encouragement = '미션 완료! 생태 전문가!';
+      const riverOptions = ['전체', ...(s.riverList || [])];
 
       let html = `
         <div class="progress-section">
@@ -429,31 +435,45 @@
                 stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
             </svg>
             <div class="ring-text">
-              <div class="num">${foundMission}</div>
-              <div class="label">/ ${MISSION_TARGETS.length}</div>
+              <div class="num">${foundCount}</div>
+              <div class="label">/ ${totalCount}</div>
             </div>
           </div>
           <div class="progress-info">
-            <h3>${encouragement}</h3>
-            <p>전체 관찰 종: ${s.totalSpecies}종<br>체크리스트 달성: ${foundMission}/${MISSION_TARGETS.length}</p>
+            <h3>${selectedRiver === '전체' ? '전체 하천' : selectedRiver} 관찰 종</h3>
+            <p>전체 관찰 종: ${s.totalSpecies}종 · ${s.rivers}개 하천<br>현재 필터: ${totalCount}종 표시중</p>
           </div>
         </div>
-        <div class="section-title">🎯 생물 체크리스트</div>
+        <div class="section-title" style="justify-content:space-between">
+          <span>🎯 생물 체크리스트 (${totalCount}종)</span>
+          <select id="riverFilter" onchange="filterRiver(this.value)"
+            style="background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:6px;padding:3px 8px;font-size:0.75rem;font-family:inherit">
+            ${riverOptions.map(r => `<option value="${esc(r)}" ${r === selectedRiver ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+          </select>
+        </div>
         <ul class="checklist">`;
 
       checklist.forEach(c => {
-        html += `<li class="${c.found ? 'found' : ''}">
-          <div class="check">${c.found ? '✓' : ''}</div>
+        html += `<li class="found">
+          <div class="check">✓</div>
           <div class="species-info">
             <div class="species-name">${esc(c.name)}</div>
-            <div class="species-hint">${c.found ? `${esc(c.found.taxon_name)} 발견!` : esc(c.hint)}</div>
+            <div class="species-hint">${esc(c.taxon)}${c.river ? ' · ' + esc(c.river) : ''}</div>
           </div>
-          ${c.found && c.found.observer ? `<span class="finder">${esc(c.found.observer)}</span>` : ''}
         </li>`;
       });
 
+      if (totalCount === 0) {
+        html += '<li><div class="species-info"><div class="species-name" style="color:#555">이 하천에서 관찰된 종이 없습니다</div></div></li>';
+      }
+
       html += '</ul><div class="spacer"></div>';
       document.getElementById('tab-species').innerHTML = html;
+    }
+
+    function filterRiver(river) {
+      selectedRiver = river;
+      buildSpeciesTab();
     }
 
     function buildBadges() {
