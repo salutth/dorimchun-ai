@@ -1,0 +1,42 @@
+name: RiverWatch Flood Prediction
+
+on:
+  schedule:
+    - cron: '30 */3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: ML 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 침수 경보 + 텔레그램
+        run: python collectors/flood_alert.py
+        continue-on-error: true
+
+      - name: AI 수위 예측 (LSTM)
+        run: python collectors/flood_predict.py
+        continue-on-error: true
+
+      - name: K-SAFE 홍수위험지수
+        run: python collectors/flood_risk_index.py
+        continue-on-error: true

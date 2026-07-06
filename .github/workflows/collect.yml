@@ -2,7 +2,7 @@ name: RiverWatch Data Collector
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -48,21 +48,6 @@ jobs:
         run: python collectors/weather.py
         continue-on-error: true
 
-      - name: 침수 경보 + 텔레그램
-        run: python collectors/flood_alert.py
-        continue-on-error: true
-
       - name: 수질 TMS
         run: python collectors/water_quality.py
-        continue-on-error: true
-
-      - name: ML 의존성 설치
-        run: pip install -r requirements.txt
-
-      - name: AI 수위 예측
-        run: python collectors/flood_predict.py
-        continue-on-error: true
-
-      - name: K-SAFE 홍수위험지수
-        run: python collectors/flood_risk_index.py
         continue-on-error: true

@@ -257,7 +257,7 @@
 
     async function loadReport() {
       const [ehi, species, readings, wq, alerts] = await Promise.all([
-        sbGet('ehi_scores', 'select=*&order=created_at.desc&limit=100'),
+        sbGet('ehi_scores', 'select=*&order=calculated_at.desc&limit=100'),
         sbGet('species_observations', 'select=taxon_name,river,is_invasive,observed_at,source&order=observed_at.desc&limit=1000'),
         sbGet('river_readings', 'select=station,river,water_level,level_ratio,status&order=id.desc&limit=500'),
         sbGet('water_quality', 'select=*&order=collected_at.desc&limit=500'),

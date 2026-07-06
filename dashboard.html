@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -1130,17 +1131,29 @@
       }
 
       let html = '';
-      const fallbackImg = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">사진없음</text></svg>';
+      const fallbackImg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23222%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2212%22%3E%EC%82%AC%EC%A7%84%EC%97%86%EC%9D%8C%3C/text%3E%3C/svg%3E';
+      const isKorean = s => /[가-힯]/.test(s);
       rows.forEach(r => {
         const imgSrc = r.photo_url && /^https?:\/\//.test(r.photo_url) ? esc(r.photo_url) : fallbackImg;
         const date = r.observed_at ? new Date(r.observed_at).toLocaleDateString('ko-KR') : '';
-        const displayName = r.common_name ? esc(r.common_name) : '미확인';
-        const sciName = r.taxon_name && r.taxon_name !== '미확인' ? r.taxon_name : '';
+        const cn = r.common_name || '';
+        const sn = r.taxon_name && r.taxon_name !== '미확인' ? r.taxon_name : '';
+        let displayName, subName;
+        if (isKorean(cn)) {
+          displayName = esc(cn);
+          subName = esc(sn);
+        } else if (cn && sn) {
+          displayName = esc(sn);
+          subName = esc(cn);
+        } else {
+          displayName = sn ? esc(sn) : '미확인';
+          subName = esc(cn);
+        }
         html += `<div class="species-card">
-          <img src="${imgSrc}" alt="${esc(r.taxon_name)}" loading="lazy" onerror="this.src='${fallbackImg}'">
+          <img src="${imgSrc}" alt="${esc(r.taxon_name)}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackImg}'">
           <div class="info">
             <div class="name">${displayName}</div>
-            <div class="sci">${esc(sciName)}</div>
+            <div class="sci">${subName}</div>
             <div class="date">${esc(date)} · ${esc(r.observer || '')}</div>
             ${r.is_invasive ? '<span class="invasive-tag">외래종</span>' : ''}
           </div>
@@ -1152,7 +1165,7 @@
     // --- EHI ---
     async function loadEHI() {
       const rows = await query('ehi_scores',
-        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,created_at&order=created_at.desc&limit=30');
+        'select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&order=calculated_at.desc&limit=30');
 
       const latest = {};
       rows.forEach(r => {
@@ -1362,7 +1375,7 @@
 
       const stations = Object.values(latest);
       if (stations.length === 0) {
-        document.getElementById('wqGrid').innerHTML = '<div class="loading">수질 데이터 없음</div>';
+        document.getElementById('wqGrid').innerHTML = '<div class="loading">수질 데이터 없음 — water_quality 테이블 생성 필요</div>';
         return;
       }
 
@@ -1403,7 +1416,7 @@
 
       if (metric === 'ehi') {
         const rows = await query('ehi_scores',
-          'select=river,ehi_score,grade&order=created_at.desc&limit=50');
+          'select=river,ehi_score,grade&order=calculated_at.desc&limit=50');
         const latest = {};
         rows.forEach(r => { if (r.river && !latest[r.river]) latest[r.river] = r; });
         const sorted = Object.values(latest).sort((a, b) => (b.ehi_score||0) - (a.ehi_score||0));
