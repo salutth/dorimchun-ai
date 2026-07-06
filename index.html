@@ -172,20 +172,35 @@
         <p>시민과학 미션 · 활동 기록</p>
       </div>
     </a>
-    <a class="card" href="platform">
-      <div class="icon icon-blue">🏗️</div>
+    <a class="card" href="geosigi">
+      <div class="icon icon-purple">🌏</div>
       <div class="info">
-        <h3>플랫폼 현황</h3>
-        <p>시스템 상태 · 수집기 헬스체크</p>
+        <h3>거시기</h3>
+        <p>외국인 유학생 정착 · 시민과학 참여</p>
       </div>
     </a>
   </div>
 
-  <div class="external-links">
-    <a class="ext-link" href="https://quartz-33c.pages.dev" target="_blank">📝 위키</a>
-    <a class="ext-link" href="https://github.com/salutth/dorimchun-ai" target="_blank">💻 GitHub</a>
-    <a class="ext-link" href="https://github.com/salutth" target="_blank">👤 프로필</a>
+  <div id="adminArea" style="display:none">
+    <div class="section-title">관리</div>
+    <div class="grid">
+      <a class="card" href="platform">
+        <div class="icon icon-blue">🏗️</div>
+        <div class="info">
+          <h3>플랫폼 현황</h3>
+          <p>시스템 상태 · 수집기 헬스체크</p>
+        </div>
+      </a>
+    </div>
+    <div class="external-links">
+      <a class="ext-link" href="https://quartz-33c.pages.dev" target="_blank">📝 위키</a>
+      <a class="ext-link" href="https://github.com/salutth/dorimchun-ai" target="_blank">💻 GitHub</a>
+      <a class="ext-link" href="https://github.com/salutth" target="_blank">👤 프로필</a>
+    </div>
   </div>
+  <script>
+    if (localStorage.getItem('rw_gate_token')) document.getElementById('adminArea').style.display = '';
+  </script>
 
 </div>
 
