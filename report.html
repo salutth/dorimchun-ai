@@ -224,6 +224,7 @@
           <label><input type="radio" name="river" value="녹번천"><span>녹번천</span></label>
           <label><input type="radio" name="river" value="세곡천"><span>세곡천</span></label>
           <label><input type="radio" name="river" value="내부천"><span>내부천</span></label>
+          <label><input type="radio" name="river" value="한강"><span>한강(서울)</span></label>
         </div>
       </div>
 
@@ -254,6 +255,7 @@
       <h3>제보 완료!</h3>
       <p id="resultText">도림천 생태 지도에 기록되었습니다.</p>
       <a class="again-btn" href="/report">한 건 더 제보하기</a>
+      <a class="again-btn" href="/mission" style="margin-left:0.5rem">🔍 생물찾기로 돌아가기</a>
     </div>
   </div>
 
@@ -303,6 +305,17 @@
       area.appendChild(img);
       area.classList.add('active');
     });
+
+    // URL param pre-fill (from mission checklist)
+    const params = new URLSearchParams(location.search);
+    if (params.get('species')) {
+      document.getElementById('speciesName').value = params.get('species');
+    }
+    if (params.get('river')) {
+      const riverVal = params.get('river');
+      const radio = document.querySelector(`input[name="river"][value="${CSS.escape(riverVal)}"]`);
+      if (radio) radio.checked = true;
+    }
 
     // Observer name persistence
     const savedObserver = localStorage.getItem('rw_observer');
@@ -354,6 +367,13 @@
         });
 
         if (res.ok) {
+          // Auto-check species in mission checklist
+          try {
+            const cl = JSON.parse(localStorage.getItem('rw_checklist') || '[]');
+            const taxon = params.get('taxon') || species;
+            if (!cl.includes(taxon)) { cl.push(taxon); localStorage.setItem('rw_checklist', JSON.stringify(cl)); }
+          } catch(e) {}
+
           document.getElementById('reportForm').style.display = 'none';
           document.querySelector('.hero').style.display = 'none';
           const result = document.getElementById('resultPanel');

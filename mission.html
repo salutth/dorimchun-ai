@@ -273,6 +273,126 @@
 
     let MISSION_TARGETS = [];
 
+    const KOREAN_NAMES = {
+      // Birds (조류)
+      'Ardea cinerea': '왜가리', 'Ardea alba': '중대백로', 'Ardea intermedia': '중백로',
+      'Egretta garzetta': '쇠백로', 'Nycticorax nycticorax': '해오라기',
+      'Anas platyrhynchos': '청둥오리', 'Anas poecilorhyncha': '흰뺨검둥오리',
+      'Mergus merganser': '비오리', 'Aix galericulata': '원앙',
+      'Pica serica': '까치', 'Passer montanus': '참새',
+      'Columba livia domestica': '집비둘기', 'Columba livia': '집비둘기',
+      'Streptopelia orientalis': '멧비둘기',
+      'Phalacrocorax carbo': '민물가마우지', 'Corvus macrorhynchos': '큰부리까마귀',
+      'Corvus corone': '까마귀',
+      'Hypsipetes amaurotis': '직박구리', 'Phoenicurus auroreus': '딱새',
+      'Picus canus': '청딱다구리', 'Parus cinereus': '박새', 'Poecile palustris': '쇠박새',
+      'Dendrocopos leucotos': '큰오색딱다구리', 'Dendrocopos major': '오색딱다구리',
+      'Dendrocopos kizuki': '쇠딱다구리',
+      'Cyanopica cyanus': '물까치', 'Cyanopica cyanus koreensis': '물까치',
+      'Turdus hortulorum': '되지빠귀', 'Turdus pallidus': '흰배지빠귀',
+      'Larus crassirostris': '괭이갈매기',
+      'Fulica atra': '물닭', 'Gallinula chloropus': '쇠물닭',
+      'Charadrius placidus': '흰목물떼새', 'Charadrius dubius': '꼬마물떼새',
+      'Motacilla alba': '알락할미새', 'Motacilla cinerea': '노랑할미새',
+      'Motacilla alba lugens': '백할미새',
+      'Hirundo rustica': '제비', 'Cecropis daurica': '귀제비',
+      'Aegithalos caudatus': '오목눈이', 'Paradoxornis webbianus': '붉은머리오목눈이',
+      'Zosterops japonicus': '동박새', 'Oriolus chinensis': '꾀꼬리',
+      'Falco tinnunculus': '황조롱이', 'Buteo buteo': '말똥가리',
+      'Accipiter gentilis': '참매', 'Accipiter soloensis': '붉은배새매',
+      'Alcedo atthis': '물총새', 'Halcyon coromanda': '호반새',
+      'Sittiparus varius': '곤줄박이', 'Acrocephalus orientalis': '개개비',
+      'Luscinia sibilans': '울새', 'Emberiza elegans': '노랑턱멧새',
+      'Chloris sinica': '방울새', 'Ninox japonica': '솔부엉이',
+      'Cuculus canorus': '뻐꾸기', 'Eurystomus orientalis': '파랑새',
+      'Garrulus glandarius': '어치', 'Troglodytes troglodytes': '굴뚝새',
+      'Haliaeetus albicilla': '흰꼬리수리', 'Pandion haliaetus': '물수리',
+      'Pica pica': '까치', 'Anas platyrhynchos': '청둥오리',
+      // Fish (어류)
+      'Cyprinus carpio': '잉어', 'Cyprinus rubrofuscus': '잉어',
+      'Zacco platypus': '피라미', 'Actinopterygii': '물고기류',
+      'Opsariichthys uncirostris': '끄리', 'Anguilla japonica': '뱀장어',
+      'Plecoglossus altivelis': '은어', 'Erythroculter erythropterus': '강준치',
+      'Carassius auratus': '붕어', 'Carassius cuvieri': '떡붕어',
+      'Pseudorasbora parva': '참붕어', 'Misgurnus anguillicaudatus': '미꾸라지',
+      'Silurus asotus': '메기', 'Rhynchocypris oxycephalus': '버들치',
+      'Zacco temminkii': '갈겨니', 'Pseudogobio esocinus': '모래무지',
+      'Pungtungia herzi': '돌고기', 'Hemibarbus longirostris': '참마자',
+      'Microphysogobio yaluensis': '돌마자', 'Coreoleuciscus splendidus': '쉬리',
+      'Coreoperca herzi': '꺽지', 'Odontobutis platycephala': '동사리',
+      'Rhinogobius brunneus': '밀어', 'Hemibarbus labeo': '누치',
+      'Acheilognathus lanceolatus': '납자루', 'Rhodeus uyekii': '각시붕어',
+      'Acheilognathus yamatsutae': '줄납자루', 'Acheilognathus signifer': '묵납자루',
+      'Acheilognathus gracilis': '가시납지리', 'Acheilognathus macropterus': '큰납지리',
+      'Rhodeus ocellatus': '흰줄납줄개', 'Siniperca scherzeri': '쏘가리',
+      'Squalidus gracilis': '긴몰개', 'Iksookimia koreensis': '참종개',
+      'Cobitis lutheri': '점줄종개',
+      'Micropterus salmoides': '배스', 'Lepomis macrochirus': '블루길',
+      // Amphibians (양서류)
+      'Pelophylax nigromaculatus': '참개구리', 'Dryophytes japonicus': '청개구리',
+      'Bufo sachalinensis': '두꺼비', 'Lithobates catesbeianus': '황소개구리',
+      // Reptiles (파충류)
+      'Takydromus wolteri': '줄장지뱀', 'Scincella vandenburghi': '도마뱀',
+      'Rhabdophis tigrinus': '유혈목이', 'Oocatochus rufodorsatus': '무자치',
+      'Elaphe dione': '누룩뱀', 'Trachemys scripta elegans': '붉은귀거북',
+      // Benthic / Aquatic invertebrates (저서생물류)
+      'Chironomidae': '깔따구', 'Tubifex tubifex': '실지렁이',
+      'Ephemeroptera': '하루살이', 'Ephemera strigata': '개똥하루살이',
+      'Dugesia japonica': '플라나리아', 'Physa acuta': '물달팽이',
+      'Semisulcospira libertina': '다슬기', 'Plecoptera': '강도래',
+      'Trichoptera': '날도래', 'Cybister japonicus': '물방개',
+      'Ranatra chinensis': '장구애비', 'Aquarius paludum': '소금쟁이',
+      'Appasus japonicus': '물자라', 'Anax parthenope': '왕잠자리',
+      // Insects (곤충)
+      'Pieris rapae': '배추흰나비', 'Pieris canidia': '대만흰나비', 'Pieris melete': '큰줄흰나비',
+      'Celastrina argiolus': '푸른부전나비', 'Harmonia axyridis': '무당벌레',
+      'Ischnura asiatica': '아시아실잠자리', 'Formica japonica': '곰개미',
+      'Apis mellifera': '꿀벌', 'Bombus ardens': '호박벌',
+      'Exomala orientalis': '등얼룩풍뎅이', 'Hierodula patellifera': '넓적배사마귀',
+      'Cryptotympana atrata': '말매미', 'Graptopsaltria nigrofuscata': '유지매미',
+      'Acrida cinerea': '방아깨비', 'Lycorma delicatula': '꽃매미',
+      'Hyphantria cunea': '미국흰불나방', 'Lymantria dispar': '매미나방',
+      // Spiders (거미)
+      'Argiope bruennichi': '긴호랑거미', 'Trichonephila clavata': '무당거미',
+      'Parasteatoda tepidariorum': '말거미',
+      // Mammals (포유류)
+      'Felis catus': '고양이',
+      // Other invertebrates
+      'Armadillidium vulgare': '쥐며느리', 'Aedes albopictus': '흰줄숲모기',
+      'Halyomorpha halys': '썩덩나무노린재', 'Plautia stali': '갈색날개노린재',
+      'Polistes chinensis': '왕바다리',
+      // Plants (식물)
+      'Erigeron annuus': '개망초', 'Phragmites australis': '갈대',
+      'Humulus scandens': '환삼덩굴', 'Ailanthus altissima': '가죽나무',
+      'Parthenocissus tricuspidata': '담쟁이덩굴', 'Lagerstroemia indica': '배롱나무',
+      'Acer palmatum': '단풍나무', 'Nandina domestica': '남천',
+      'Prunus serrulata': '벚나무', 'Alcea rosea': '접시꽃',
+      'Platycodon grandiflorus': '도라지', 'Lilium lancifolium': '참나리', 'Hosta': '비비추',
+      // Invasive plants (교란 식물)
+      'Ambrosia artemisiifolia': '돼지풀', 'Ambrosia trifida': '단풍잎돼지풀',
+      'Sicyos angulatus': '가시박', 'Aster pilosus': '미국쑥부쟁이',
+      'Solidago altissima': '양미역취', 'Paspalum distichum': '물참새피',
+    };
+
+    const TAXON_EMOJI = {
+      bird: '🐦', fish: '🐟', amphibian: '🐸', reptile: '🦎', insect: '🦗',
+      benthic: '🔬', spider: '🕷️', mammal: '🐾', plant: '🌿', mushroom: '🍄', other: '🔬',
+    };
+
+    function classifyTaxon(taxon, common) {
+      const t = (taxon + ' ' + common).toLowerCase();
+      if (/aves|ardea|anas |anas$|pica |passer|columba|streptopelia|phalacrocorax|corvus|hypsipetes|phoenicurus|picus|parus|poecile|dendrocopos|cyanopica|turdus|larus|accipitr|egretta|nycticorax|mergus|aix |fulica|gallinula|charadrius|motacilla|hirundo|cecropis|aegithalos|zosterops|oriolus|falco|buteo|alcedo|halcyon|sittiparus|acrocephalus|paradoxornis|luscinia|emberiza|chloris|ninox|cuculus|eurystomus|garrulus|troglodytes/.test(t)) return 'bird';
+      if (/pisces|cyprinus|zacco|actinopterygii|carassius|pseudorasbora|misgurnus|silurus|rhynchocypris|pseudogobio|pungtungia|hemibarbus|microphysogobio|coreoleuciscus|coreoperca|odontobutis|rhinogobius|acheilognathus|rhodeus|siniperca|squalidus|iksookimia|cobitis|micropterus|lepomis/.test(t)) return 'fish';
+      if (/pelophylax|dryophytes|bufo|rana |lithobates|개구리|두꺼비|황소개구리/.test(t)) return 'amphibian';
+      if (/takydromus|scincella|rhabdophis|oocatochus|elaphe|trachemys|거북|뱀|도마뱀/.test(t)) return 'reptile';
+      if (/chironomidae|tubifex|ephemeroptera|ephemera |dugesia|physa |semisulcospira|plecoptera|trichoptera|cybister|ranatra|aquarius paludum|appasus|anax |깔따구|실지렁이|하루살이|플라나리아|물달팽이|다슬기|강도래|날도래|물방개|장구애비|소금쟁이|물자라/.test(t)) return 'benthic';
+      if (/felis|lutra|수달|고양이/.test(t)) return 'mammal';
+      if (/araneae|argiope|trichonephila|salticinae|thomisidae|lycosidae|parasteatoda|거미/.test(t)) return 'spider';
+      if (/agaric|agaricomycetes|trametes|lycoperdon|abortiporus|mushroom|버섯/.test(t)) return 'mushroom';
+      if (/plantae|magnoliopsida|rosa |prunus|acer |hosta|lilium|phragmites|humulus|ailanthus|platycodon|alcea|nandina|quercus|salix|ambrosia|sicyos|aster pilosus|solidago|paspalum|erigeron|lagerstroemia|parthenocissus|나무|꽃|풀|돼지풀/.test(t)) return 'plant';
+      return 'insect';
+    }
+
     const MISSIONS = [
       { id: 'first_obs', icon: '🔬', name: '첫 관찰', desc: '생물 1종 이상 관찰하기', pts: 10, check: s => s.totalSpecies >= 1 },
       { id: 'explorer', icon: '🗺️', name: '탐험가', desc: '3개 이상 하천 방문하기', pts: 30, check: s => s.rivers >= 3 },
@@ -334,21 +454,32 @@
         if (s.river) observerStats[obs].rivers.add(s.river);
       });
 
-      // Build dynamic checklist from DB
+      // Build dynamic checklist from DB - group by taxon, collect all rivers
       const allSpeciesMap = {};
       speciesData.forEach(s => {
         if (!s.taxon_name) return;
-        if (!allSpeciesMap[s.taxon_name]) allSpeciesMap[s.taxon_name] = s;
+        if (!allSpeciesMap[s.taxon_name]) {
+          const ko = KOREAN_NAMES[s.taxon_name];
+          const cn = s.common_name || '';
+          const displayName = ko || (cn && /[가-힯]/.test(cn) ? cn : null) || cn || s.taxon_name;
+          const cat = classifyTaxon(s.taxon_name, cn);
+          allSpeciesMap[s.taxon_name] = {
+            taxon: s.taxon_name, name: displayName, category: cat,
+            emoji: TAXON_EMOJI[cat], rivers: new Set(), count: 0,
+            invasive: s.is_invasive,
+            inatId: s.inaturalist_id,
+          };
+        }
+        allSpeciesMap[s.taxon_name].count++;
+        if (s.river) allSpeciesMap[s.taxon_name].rivers.add(s.river);
       });
       MISSION_TARGETS = Object.values(allSpeciesMap).map(s => ({
-        name: s.common_name || s.taxon_name,
-        taxon: s.taxon_name,
-        hint: s.river ? `${s.river}에서 관찰됨` : '',
-        river: s.river || '',
+        ...s, rivers: [...s.rivers].sort((a,b) => a.localeCompare(b,'ko')),
       }));
       MISSION_TARGETS.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-      const checklist = buildChecklist();
+      const checked = loadChecked();
+      const checklistFound = MISSION_TARGETS.filter(t => checked.has(t.taxon)).length;
 
       statsCache = {
         totalSpecies: uniqueSpecies.size,
@@ -359,8 +490,7 @@
         dorimSpecies: dorimSpecies.size,
         birdCount, fishCount,
         totalObs: speciesData.length,
-        checklist,
-        checklistFound: checklist.filter(c => c.found).length,
+        checklistFound,
         observerStats,
       };
 
@@ -372,12 +502,18 @@
 
     function sorted(set) { return [...set].sort((a, b) => a.localeCompare(b, 'ko')); }
 
-    function buildChecklist() {
-      let targets = MISSION_TARGETS;
-      if (selectedRiver !== '전체') {
-        targets = targets.filter(t => t.river === selectedRiver);
-      }
-      return targets.map(t => ({ ...t, found: t.taxon ? true : false }));
+    function loadChecked() {
+      try { return new Set(JSON.parse(localStorage.getItem('rw_checklist') || '[]')); } catch { return new Set(); }
+    }
+    function saveChecked(set) {
+      localStorage.setItem('rw_checklist', JSON.stringify([...set]));
+    }
+    function toggleSpecies(taxon) {
+      const checked = loadChecked();
+      if (checked.has(taxon)) checked.delete(taxon); else checked.add(taxon);
+      saveChecked(checked);
+      statsCache.checklistFound = MISSION_TARGETS.filter(t => checked.has(t.taxon)).length;
+      buildSpeciesTab();
     }
 
     function buildMissions() {
@@ -417,14 +553,20 @@
 
     function buildSpeciesTab() {
       const s = statsCache;
-      const checklist = buildChecklist();
-      const totalCount = checklist.length;
-      const foundCount = checklist.filter(c => c.found).length;
+      const checked = loadChecked();
+      const riverOptions = ['전체', ...(s.riverList || [])];
+
+      const filtered = selectedRiver === '전체'
+        ? MISSION_TARGETS
+        : MISSION_TARGETS.filter(t => t.rivers.includes(selectedRiver));
+
+      const totalCount = filtered.length;
+      const checkedCount = filtered.filter(t => checked.has(t.taxon)).length;
       const circumference = 2 * Math.PI * 38;
-      const ratio = totalCount > 0 ? foundCount / totalCount : 0;
+      const ratio = totalCount > 0 ? checkedCount / totalCount : 0;
       const offset = circumference * (1 - ratio);
 
-      const riverOptions = ['전체', ...(s.riverList || [])];
+      const categories = [...new Set(filtered.map(t => t.category))].sort();
 
       let html = `
         <div class="progress-section">
@@ -435,36 +577,55 @@
                 stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
             </svg>
             <div class="ring-text">
-              <div class="num">${foundCount}</div>
+              <div class="num">${checkedCount}</div>
               <div class="label">/ ${totalCount}</div>
             </div>
           </div>
           <div class="progress-info">
-            <h3>${selectedRiver === '전체' ? '전체 하천' : selectedRiver} 관찰 종</h3>
-            <p>전체 관찰 종: ${s.totalSpecies}종 · ${s.rivers}개 하천<br>현재 필터: ${totalCount}종 표시중</p>
+            <h3>${selectedRiver === '전체' ? '전체 하천' : selectedRiver} 조사 체크리스트</h3>
+            <p>관찰한 종을 선택하세요<br>선택: ${checkedCount}종 / 전체: ${totalCount}종</p>
           </div>
         </div>
-        <div class="section-title" style="justify-content:space-between">
-          <span>🎯 생물 체크리스트 (${totalCount}종)</span>
-          <select id="riverFilter" onchange="filterRiver(this.value)"
-            style="background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:6px;padding:3px 8px;font-size:0.75rem;font-family:inherit">
-            ${riverOptions.map(r => `<option value="${esc(r)}" ${r === selectedRiver ? 'selected' : ''}>${esc(r)}</option>`).join('')}
-          </select>
+        <div class="section-title" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <span>📋 생물종 조사 (${totalCount}종)</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="riverFilter" onchange="filterRiver(this.value)"
+              style="background:#1a1a28;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:6px;padding:3px 8px;font-size:0.75rem;font-family:inherit">
+              ${riverOptions.map(r => `<option value="${esc(r)}" ${r === selectedRiver ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+            </select>
+            <button onclick="exportReport()" style="background:#2ecc71;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;white-space:nowrap">
+              📄 보고서 내보내기
+            </button>
+          </div>
         </div>
         <ul class="checklist">`;
 
-      checklist.forEach(c => {
-        html += `<li class="found">
-          <div class="check">✓</div>
-          <div class="species-info">
-            <div class="species-name">${esc(c.name)}</div>
-            <div class="species-hint">${esc(c.taxon)}${c.river ? ' · ' + esc(c.river) : ''}</div>
-          </div>
-        </li>`;
-      });
-
       if (totalCount === 0) {
-        html += '<li><div class="species-info"><div class="species-name" style="color:#555">이 하천에서 관찰된 종이 없습니다</div></div></li>';
+        html += '<li><div class="species-info"><div class="species-name" style="color:#555">이 하천에서 관찰 가능한 종이 없습니다</div></div></li>';
+      } else {
+        categories.forEach(cat => {
+          const catSpecies = filtered.filter(t => t.category === cat);
+          if (catSpecies.length === 0) return;
+          const catEmoji = TAXON_EMOJI[cat] || '🔬';
+          const catLabel = {bird:'조류',fish:'어류',amphibian:'양서류',reptile:'파충류',benthic:'저서생물',insect:'곤충',spider:'거미',mammal:'포유류',plant:'식물',mushroom:'균류',other:'기타'}[cat] || cat;
+          html += `<li style="padding:6px 12px;background:#1a1a28;border-bottom:none"><span style="font-size:0.75rem;color:#888">${catEmoji} ${catLabel} (${catSpecies.length}종)</span></li>`;
+
+          catSpecies.forEach(t => {
+            const isChecked = checked.has(t.taxon);
+            html += `<li class="${isChecked ? 'found' : ''}" onclick="toggleSpecies('${t.taxon.replace(/'/g, "\\'")}')" style="cursor:pointer">
+              <div class="check" style="border:2px solid ${isChecked ? '#2ecc71' : '#444'};background:${isChecked ? '#2ecc7130' : 'transparent'};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">${isChecked ? '✓' : ''}</div>
+              <div class="species-info" style="flex:1;min-width:0">
+                <div class="species-name">${t.emoji} ${esc(t.name)}${t.invasive ? ' <span style="color:#e74c3c;font-size:0.65rem">⚠교란종</span>' : ''}</div>
+                <div class="species-hint" style="font-size:0.65rem;color:#666">${esc(t.taxon)} · ${t.rivers.slice(0,3).join(', ')}${t.rivers.length > 3 ? ' 외' : ''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
+                <div style="font-size:0.65rem;color:#555">${t.count}건</div>
+                <a href="/report?species=${encodeURIComponent(t.name)}&taxon=${encodeURIComponent(t.taxon)}&river=${encodeURIComponent(selectedRiver === '전체' ? '' : selectedRiver)}"
+                  onclick="event.stopPropagation()" style="font-size:0.6rem;color:#7873f5;text-decoration:none;padding:2px 6px;border:1px solid #7873f544;border-radius:4px">📷제보</a>
+              </div>
+            </li>`;
+          });
+        });
       }
 
       html += '</ul><div class="spacer"></div>';
@@ -474,6 +635,58 @@
     function filterRiver(river) {
       selectedRiver = river;
       buildSpeciesTab();
+    }
+
+    function exportReport() {
+      const checked = loadChecked();
+      const filtered = selectedRiver === '전체'
+        ? MISSION_TARGETS
+        : MISSION_TARGETS.filter(t => t.rivers.includes(selectedRiver));
+      const selected = filtered.filter(t => checked.has(t.taxon));
+
+      if (selected.length === 0) {
+        alert('선택된 종이 없습니다. 관찰한 종을 체크한 후 내보내기하세요.');
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const river = selectedRiver === '전체' ? '전체 하천' : selectedRiver;
+
+      let report = `══════════════════════════════════════\n`;
+      report += `  RiverWatch 시민과학 조사 보고서\n`;
+      report += `══════════════════════════════════════\n\n`;
+      report += `조사일시: ${dateStr} ${timeStr}\n`;
+      report += `조사지역: ${river}\n`;
+      report += `관찰 종수: ${selected.length}종\n\n`;
+      report += `──────────────────────────────────────\n`;
+      report += `  관찰 생물종 목록\n`;
+      report += `──────────────────────────────────────\n\n`;
+
+      const cats = [...new Set(selected.map(s => s.category))].sort();
+      const catLabel = {bird:'조류',fish:'어류',amphibian:'양서류',reptile:'파충류',benthic:'저서생물',insect:'곤충',spider:'거미',mammal:'포유류',plant:'식물',mushroom:'균류',other:'기타'};
+      cats.forEach(cat => {
+        const items = selected.filter(s => s.category === cat);
+        report += `[${TAXON_EMOJI[cat] || '🔬'} ${catLabel[cat] || cat}] ${items.length}종\n`;
+        items.forEach((s, i) => {
+          report += `  ${i+1}. ${s.name} (${s.taxon})${s.invasive ? ' ⚠교란종' : ''}\n`;
+          report += `     관찰하천: ${s.rivers.join(', ')}\n`;
+        });
+        report += '\n';
+      });
+
+      report += `──────────────────────────────────────\n`;
+      report += `  도깨비3.0팀 · RiverWatch 시민과학\n`;
+      report += `  https://dorimchun-ai.pages.dev\n`;
+      report += `══════════════════════════════════════\n`;
+
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `RiverWatch_조사보고서_${river}_${dateStr}.txt`;
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
 
     function buildBadges() {
