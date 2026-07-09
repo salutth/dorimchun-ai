@@ -9,4 +9,6 @@ make_pptx.js
 package.json
 package-lock.json
 ml/*.pt
-ml/*.onnx
+ml/archive/
+!ml/model.onnx
+!ml/model_ensemble_*.onnx

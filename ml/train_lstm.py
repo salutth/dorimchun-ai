@@ -1,11 +1,9 @@
 """
-LSTM 수위 예측 모델 학습 스크립트
-- Supabase에서 river_readings + weather_forecasts 이력 추출
-- PyTorch LSTM 학습
-- ONNX 형식으로 모델 내보내기
-- scaler_params.json 저장
-
-사용법: python ml/train_lstm.py
+LSTM 수위 예측 모델 학습 스크립트 v2
+- 앙상블 학습 (3-seed)
+- MAE/RMSE/MAPE/상태일치율 검증
+- 이상치 탐지 + 선형 보간
+- ONNX 내보내기 (앙상블)
 """
 
 import json
@@ -20,10 +18,14 @@ ML_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 from ml.preprocess import (
-    FEATURE_NAMES, HORIZON, NUM_FEATURES, WINDOW_SIZE,
-    build_feature_row, create_windows, fit_scaler,
-    normalize, normalize_row, parse_hour_from_iso, save_scaler,
+    DEFAULT_SCALER, FEATURE_NAMES, HORIZON, NUM_FEATURES, WINDOW_SIZE,
+    build_feature_row, create_windows, denormalize, detect_outliers,
+    fit_scaler, interpolate_gaps, normalize, normalize_row,
+    parse_hour_from_iso, parse_weekday_from_iso, save_scaler,
 )
+
+ENSEMBLE_SIZE = 3
+ENSEMBLE_SEEDS = [42, 123, 7]
 
 
 def load_env():
@@ -44,11 +46,7 @@ def sb_query(table, params=""):
         return []
     url = f"{sb_url}/rest/v1/{table}?{params}"
     req = urllib.request.Request(
-        url,
-        headers={
-            "apikey": sb_key,
-            "Authorization": f"Bearer {sb_key}",
-        },
+        url, headers={"apikey": sb_key, "Authorization": f"Bearer {sb_key}"},
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -60,7 +58,6 @@ def sb_query(table, params=""):
 
 
 def fetch_all_readings():
-    """최근 30일간 수위 데이터를 가져온다."""
     print("📥 수위 데이터 조회 중...")
     rows = sb_query(
         "river_readings",
@@ -72,7 +69,6 @@ def fetch_all_readings():
 
 
 def fetch_all_weather():
-    """기상 예보 데이터를 가져온다."""
     print("📥 기상 예보 조회 중...")
     rows = sb_query(
         "weather_forecasts",
@@ -84,7 +80,6 @@ def fetch_all_weather():
 
 
 def group_by_station(readings):
-    """관측소별로 시계열 그룹핑."""
     groups = {}
     for r in readings:
         key = r.get("station", "unknown")
@@ -94,25 +89,7 @@ def group_by_station(readings):
     return groups
 
 
-def build_weather_map(weather_rows, river):
-    """특정 하천의 기상 데이터를 {date: {hour: data}} 형태로."""
-    wmap = {}
-    for w in weather_rows:
-        if w.get("river") != river:
-            continue
-        date = w.get("forecast_date", "")
-        hour_str = w.get("forecast_hour", "00:00")
-        try:
-            hour = int(hour_str.split(":")[0]) if ":" in str(hour_str) else int(hour_str)
-        except (ValueError, TypeError):
-            hour = 0
-        date_key = f"{date}_{hour}"
-        wmap[date_key] = w
-    return wmap
-
-
 def build_station_features(station_readings, weather_rows, river):
-    """관측소의 시계열 특성 벡터 리스트를 생성."""
     weather_by_date = {}
     for w in weather_rows:
         if w.get("river") != river:
@@ -127,19 +104,43 @@ def build_station_features(station_readings, weather_rows, river):
             weather_by_date[date] = {}
         weather_by_date[date][hour] = w
 
+    raw_levels = [r.get("water_level") for r in station_readings]
+    outlier_flags = detect_outliers(raw_levels)
+    for i, is_outlier in enumerate(outlier_flags):
+        if is_outlier:
+            raw_levels[i] = None
+    interpolated = interpolate_gaps(raw_levels)
+
     features = []
-    for r in station_readings:
+    level_history = []
+
+    for idx, r in enumerate(station_readings):
+        wl = interpolated[idx]
+        if wl is None:
+            continue
+
+        r_copy = dict(r)
+        r_copy["water_level"] = wl
+        if r_copy.get("level_ratio") and r.get("water_level") and r["water_level"] > 0:
+            r_copy["level_ratio"] = wl / r["water_level"] * r_copy["level_ratio"]
+
         measured = r.get("measured_at", r.get("collected_at", ""))
         hour = parse_hour_from_iso(measured)
+        weekday = parse_weekday_from_iso(measured)
         date = measured[:10] if measured else ""
         wmap = weather_by_date.get(date, {})
-        feat = build_feature_row(r, wmap, hour)
+
+        prev_level = level_history[-24] if len(level_history) >= 24 else (level_history[0] if level_history else wl)
+        avg_24h = sum(level_history[-24:]) / len(level_history[-24:]) if level_history else wl
+
+        feat = build_feature_row(r_copy, wmap, hour, prev_level, avg_24h, weekday)
         features.append(feat)
+        level_history.append(wl)
+
     return features
 
 
 def determine_window_horizon(max_seq_len):
-    """데이터 양에 따라 윈도우/호라이즌 크기를 적응적으로 결정."""
     if max_seq_len >= WINDOW_SIZE + HORIZON:
         return WINDOW_SIZE, HORIZON
     usable = max_seq_len
@@ -151,7 +152,6 @@ def determine_window_horizon(max_seq_len):
 
 
 def create_windows_adaptive(feature_rows, scaler, win, hor):
-    """적응형 윈도우 크기로 학습 데이터를 생성."""
     inputs, targets = [], []
     total = len(feature_rows)
     for i in range(total - win - hor + 1):
@@ -165,7 +165,6 @@ def create_windows_adaptive(feature_rows, scaler, win, hor):
 
 
 def pad_or_trim_window(inp, target_win):
-    """윈도우를 표준 크기(WINDOW_SIZE)로 맞춘다. 부족하면 첫 행 복제."""
     if len(inp) >= target_win:
         return inp[-target_win:]
     pad = [inp[0]] * (target_win - len(inp))
@@ -173,10 +172,67 @@ def pad_or_trim_window(inp, target_win):
 
 
 def pad_or_trim_target(tgt, target_hor):
-    """타겟을 표준 크기(HORIZON)로 맞춘다. 부족하면 마지막 값 복제."""
     if len(tgt) >= target_hor:
         return tgt[:target_hor]
     return tgt + [tgt[-1]] * (target_hor - len(tgt))
+
+
+def compute_validation_metrics(model, val_dl, scaler, device="cpu"):
+    """MAE, RMSE, MAPE, 상태일치율을 계산."""
+    import numpy as np
+    import torch
+
+    model.eval()
+    all_preds, all_targets = [], []
+    with torch.no_grad():
+        for xb, yb in val_dl:
+            xb = xb.to(device)
+            pred = model(xb).cpu().numpy()
+            all_preds.append(pred)
+            all_targets.append(yb.numpy())
+
+    preds = np.concatenate(all_preds, axis=0)
+    targets = np.concatenate(all_targets, axis=0)
+
+    preds_denorm = np.array([
+        [denormalize(float(v), "water_level", scaler) for v in row]
+        for row in preds
+    ])
+    targets_denorm = np.array([
+        [denormalize(float(v), "water_level", scaler) for v in row]
+        for row in targets
+    ])
+
+    errors = np.abs(preds_denorm - targets_denorm)
+    mae = float(np.mean(errors))
+    rmse = float(np.sqrt(np.mean(errors ** 2)))
+
+    nonzero = targets_denorm > 0.1
+    if np.any(nonzero):
+        mape = float(np.mean(errors[nonzero] / targets_denorm[nonzero]) * 100)
+    else:
+        mape = 0.0
+
+    def status(level):
+        if level >= 80:
+            return 2
+        if level >= 50:
+            return 1
+        return 0
+
+    status_match = 0
+    total_pts = 0
+    for i in range(len(preds_denorm)):
+        for j in range(preds_denorm.shape[1]):
+            p_status = status(preds_denorm[i][j])
+            t_status = status(targets_denorm[i][j])
+            if p_status == t_status:
+                status_match += 1
+            total_pts += 1
+
+    accuracy = status_match / total_pts * 100 if total_pts > 0 else 0
+
+    return {"mae": mae, "rmse": rmse, "mape": mape, "accuracy": accuracy}
 
 
 def train():
@@ -187,7 +243,8 @@ def train():
 
     load_env()
     print("=" * 50)
-    print("🧠 LSTM 수위 예측 모델 학습")
+    print("🧠 LSTM 수위 예측 모델 학습 v2")
+    print(f"  앙상블: {ENSEMBLE_SIZE}개 모델, 시드: {ENSEMBLE_SEEDS}")
     print("=" * 50)
 
     readings = fetch_all_readings()
@@ -200,22 +257,24 @@ def train():
     stations = group_by_station(readings)
     print(f"\n📊 관측소 {len(stations)}개 발견")
 
+    rain_count = sum(1 for w in weather if (w.get("rain_probability") or 0) > 0)
+    print(f"🌧️ 강우 데이터: {len(weather)}건 중 {rain_count}건에 강수확률 > 0")
+
     all_station_features = []
     max_seq_len = 0
     for stn, info in stations.items():
         feats = build_station_features(info["readings"], weather, info["river"])
         all_station_features.append((stn, feats))
         max_seq_len = max(max_seq_len, len(feats))
-        print(f"  📍 {stn}: {len(feats)}시점")
+        print(f"  📍 {stn}: {len(feats)}시점 (이상치 제거 후)")
 
     actual_win, actual_hor = determine_window_horizon(max_seq_len)
     cold_start = actual_win < WINDOW_SIZE or actual_hor < HORIZON
     if cold_start:
         print(f"\n⚡ Cold-start 모드: 윈도우={actual_win}, 호라이즌={actual_hor}")
-        print(f"   (표준: 윈도우={WINDOW_SIZE}, 호라이즌={HORIZON})")
-        model_version = "v1-coldstart"
+        model_version = "v2-coldstart"
     else:
-        model_version = "v1"
+        model_version = "v2"
 
     all_feature_rows = []
     for stn, feats in all_station_features:
@@ -230,6 +289,9 @@ def train():
     scaler_path = os.path.join(ML_DIR, "scaler_params.json")
     save_scaler(scaler, scaler_path)
     print(f"\n💾 정규화 파라미터 저장: {scaler_path}")
+    for feat in FEATURE_NAMES:
+        s = scaler[feat]
+        print(f"  {feat:20s}: [{s['min']:.2f}, {s['max']:.2f}]")
 
     all_inputs, all_targets = [], []
     for stn, feats in all_station_features:
@@ -253,13 +315,7 @@ def train():
     split = max(1, int(len(X) * 0.8))
     X_train, X_val = X[:split], X[split:] if split < len(X) else X[-1:]
     y_train, y_val = y[:split], y[split:] if split < len(y) else y[-1:]
-
     print(f"  학습: {len(X_train)}개, 검증: {len(X_val)}개")
-
-    train_ds = TensorDataset(torch.from_numpy(X_train), torch.from_numpy(y_train))
-    val_ds = TensorDataset(torch.from_numpy(X_val), torch.from_numpy(y_val))
-    train_dl = DataLoader(train_ds, batch_size=min(32, len(X_train)), shuffle=True)
-    val_dl = DataLoader(val_ds, batch_size=min(64, len(X_val)))
 
     class LSTMPredictor(nn.Module):
         def __init__(self):
@@ -280,79 +336,121 @@ def train():
             out = self.relu(self.fc1(out))
             return self.fc2(out)
 
-    model = LSTMPredictor()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    criterion = nn.MSELoss()
+    best_ensemble_metrics = None
+    ensemble_paths = []
 
-    epochs = 100 if cold_start else 50
-    best_val_loss = float("inf")
-    best_state = None
-    patience = 15 if cold_start else 10
-    no_improve = 0
+    for eidx, seed in enumerate(ENSEMBLE_SEEDS):
+        print(f"\n{'='*40}")
+        print(f"🎲 앙상블 모델 {eidx+1}/{ENSEMBLE_SIZE} (seed={seed})")
+        print(f"{'='*40}")
 
-    print(f"\n🏋️ 학습 시작 (에포크: {epochs}, 조기종료 patience: {patience})")
-    for epoch in range(epochs):
-        model.train()
-        train_loss = 0
-        for xb, yb in train_dl:
-            pred = model(xb)
-            loss = criterion(pred, yb)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item() * len(xb)
-        train_loss /= len(X_train)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
 
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for xb, yb in val_dl:
+        model = LSTMPredictor()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        criterion = nn.MSELoss()
+
+        train_ds = TensorDataset(torch.from_numpy(X_train), torch.from_numpy(y_train))
+        val_ds = TensorDataset(torch.from_numpy(X_val), torch.from_numpy(y_val))
+        train_dl = DataLoader(train_ds, batch_size=min(32, len(X_train)), shuffle=True)
+        val_dl = DataLoader(val_ds, batch_size=min(64, len(X_val)))
+
+        epochs = 100 if cold_start else 50
+        best_val_loss = float("inf")
+        best_state = None
+        patience = 15 if cold_start else 10
+        no_improve = 0
+
+        for epoch in range(epochs):
+            model.train()
+            train_loss = 0
+            for xb, yb in train_dl:
                 pred = model(xb)
-                val_loss += criterion(pred, yb).item() * len(xb)
-        val_loss /= len(X_val)
+                loss = criterion(pred, yb)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                train_loss += loss.item() * len(xb)
+            train_loss /= len(X_train)
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_state = {k: v.clone() for k, v in model.state_dict().items()}
-            no_improve = 0
-            marker = " ⭐"
-        else:
-            no_improve += 1
-            marker = ""
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for xb, yb in val_dl:
+                    pred = model(xb)
+                    val_loss += criterion(pred, yb).item() * len(xb)
+            val_loss /= len(X_val)
 
-        if (epoch + 1) % 10 == 0 or marker:
-            print(f"  Epoch {epoch+1:3d}/{epochs}  train={train_loss:.6f}  val={val_loss:.6f}{marker}")
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_state = {k: v.clone() for k, v in model.state_dict().items()}
+                no_improve = 0
+                marker = " ⭐"
+            else:
+                no_improve += 1
+                marker = ""
 
-        if no_improve >= patience:
-            print(f"  ⏹️  조기 종료 (patience {patience})")
-            break
+            if (epoch + 1) % 10 == 0 or marker:
+                print(f"  Epoch {epoch+1:3d}/{epochs}  train={train_loss:.6f}  val={val_loss:.6f}{marker}")
 
-    model.load_state_dict(best_state)
-    model.eval()
-    print(f"\n✅ 최적 검증 손실: {best_val_loss:.6f}")
+            if no_improve >= patience:
+                print(f"  ⏹️  조기 종료 (patience {patience})")
+                break
 
-    if cold_start:
-        print(f"⚠️  Cold-start 모델: 데이터 축적 후 재학습 권장 (model_version: {model_version})")
+        model.load_state_dict(best_state)
+        model.eval()
 
-    onnx_path = os.path.join(ML_DIR, "model.onnx")
-    dummy = torch.randn(1, WINDOW_SIZE, NUM_FEATURES)
-    torch.onnx.export(
-        model, dummy, onnx_path,
-        input_names=["input"],
-        output_names=["output"],
-        dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
-        opset_version=14,
-    )
-    size_kb = os.path.getsize(onnx_path) / 1024
-    print(f"💾 ONNX 모델 저장: {onnx_path} ({size_kb:.0f} KB)")
+        metrics = compute_validation_metrics(model, val_dl, scaler)
+        print(f"\n  📊 검증 지표:")
+        print(f"     MAE:  {metrics['mae']:.2f} cm")
+        print(f"     RMSE: {metrics['rmse']:.2f} cm")
+        print(f"     MAPE: {metrics['mape']:.1f}%")
+        print(f"     상태일치율: {metrics['accuracy']:.1f}%")
 
-    meta = {"model_version": model_version, "window": actual_win, "horizon": actual_hor, "samples": len(all_inputs)}
+        onnx_path = os.path.join(ML_DIR, f"model_ensemble_{eidx}.onnx")
+        dummy = torch.randn(1, WINDOW_SIZE, NUM_FEATURES)
+        torch.onnx.export(
+            model, dummy, onnx_path,
+            input_names=["input"], output_names=["output"],
+            dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
+            opset_version=14,
+        )
+        ensemble_paths.append(onnx_path)
+
+        if best_ensemble_metrics is None or metrics["mape"] < best_ensemble_metrics["mape"]:
+            best_ensemble_metrics = metrics
+            best_onnx_path = onnx_path
+
+    import shutil
+    main_model_path = os.path.join(ML_DIR, "model.onnx")
+    shutil.copy2(best_onnx_path, main_model_path)
+    print(f"\n💾 최적 모델 → model.onnx 복사")
+
+    meta = {
+        "model_version": model_version,
+        "window": actual_win,
+        "horizon": actual_hor,
+        "samples": len(all_inputs),
+        "num_features": NUM_FEATURES,
+        "feature_names": FEATURE_NAMES,
+        "ensemble_size": ENSEMBLE_SIZE,
+        "ensemble_seeds": ENSEMBLE_SEEDS,
+        "validation_metrics": best_ensemble_metrics,
+        "weather_data_count": len(weather),
+        "rain_data_available": rain_count > 0,
+    }
     meta_path = os.path.join(ML_DIR, "model_meta.json")
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
-    print(f"💾 모델 메타데이터 저장: {meta_path}")
 
-    print("\n🎉 학습 완료!")
+    print(f"\n{'='*50}")
+    print(f"🎉 앙상블 학습 완료!")
+    print(f"  모델 버전: {model_version}")
+    print(f"  앙상블: {ENSEMBLE_SIZE}개 모델")
+    print(f"  최적 MAPE: {best_ensemble_metrics['mape']:.1f}%")
+    print(f"  최적 상태일치율: {best_ensemble_metrics['accuracy']:.1f}%")
+    print(f"{'='*50}")
 
 
 if __name__ == "__main__":

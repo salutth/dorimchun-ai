@@ -1,0 +1,74 @@
+name: LSTM 주간 재학습
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'  # 매주 일요일 03:00 KST (UTC 18:00)
+  workflow_dispatch: {}
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 학습 의존성 설치
+        run: pip install -r requirements-train.txt
+
+      - name: 기존 모델 백업
+        run: |
+          mkdir -p ml/archive
+          if [ -f ml/model.onnx ]; then
+            cp ml/model.onnx ml/archive/model_prev.onnx
+            cp ml/scaler_params.json ml/archive/scaler_prev.json
+            echo "기존 모델 백업 완료"
+          else
+            echo "기존 모델 없음 — 신규 학습"
+          fi
+
+      - name: LSTM 앙상블 학습
+        run: python ml/train_lstm.py
+
+      - name: 드리프트 감지 + 백테스트
+        run: python ml/backtest.py
+
+      - name: 모델 커밋 & 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ml/model.onnx ml/model_ensemble_*.onnx ml/scaler_params.json ml/model_meta.json
+          if git diff --staged --quiet; then
+            echo "모델 변경 없음 — 커밋 건너뜀"
+          else
+            MAPE=$(python -c "import json; m=json.load(open('ml/model_meta.json')); print(f\"{m['validation_metrics']['mape']:.1f}\")")
+            git commit -m "auto-retrain: LSTM v2 재학습 (MAPE ${MAPE}%)"
+            git push
+            echo "모델 업데이트 푸시 완료"
+          fi
+
+  drift-alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: retrain
+    if: failure()
+
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - name: 재학습 실패 알림
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            MSG="⚠️ RiverWatch LSTM 재학습 실패%0A시각: $(date -u +'%Y-%m-%d %H:%M UTC')%0A확인: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${MSG}" > /dev/null
+          fi
