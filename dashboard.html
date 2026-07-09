@@ -839,7 +839,7 @@
     async function loadSpecies() {
       const river = getSelectedRiver();
       const rows = await query('species_observations',
-        `select=taxon_name,common_name,photo_url,observed_at,is_invasive,observer&river=eq.${encodeURIComponent(river)}&order=observed_at.desc&limit=20`);
+        `select=taxon_name,common_name,korean_name,photo_url,taxon_id,observed_at,is_invasive,observer&river=eq.${encodeURIComponent(river)}&order=observed_at.desc&limit=20`);
 
       document.getElementById('speciesCount').textContent = `${rows.length}종`;
 
@@ -849,15 +849,22 @@
       }
 
       let html = '';
-      const fallbackImg = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">No Photo</text></svg>';
+      const fallbackImg = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="12">사진없음</text></svg>';
       rows.forEach(r => {
-        const imgSrc = r.photo_url && /^https?:\/\//.test(r.photo_url) ? esc(r.photo_url) : fallbackImg;
+        let imgSrc = fallbackImg;
+        if (r.photo_url && /^https?:\/\//.test(r.photo_url)) {
+          imgSrc = esc(r.photo_url);
+        } else if (r.taxon_id) {
+          imgSrc = `https://inaturalist-open-data.s3.amazonaws.com/photos/${r.taxon_id}/medium.jpg`;
+        }
         const date = r.observed_at ? new Date(r.observed_at).toLocaleDateString('ko-KR') : '';
+        const displayName = r.korean_name || r.common_name || '';
         html += `<div class="species-card">
-          <img src="${imgSrc}" alt="${esc(r.taxon_name)}" loading="lazy" onerror="this.src='${fallbackImg}'">
+          <img src="${imgSrc}" alt="${esc(r.taxon_name)}" loading="lazy"
+               onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src=this.src.replace('/medium.','/small.');}else{this.src='${fallbackImg}';}">
           <div class="info">
             <div class="name">${esc(r.taxon_name || '미확인')}</div>
-            <div class="common">${esc(r.common_name || '')}</div>
+            <div class="common">${esc(displayName)}</div>
             <div class="date">${esc(date)} · ${esc(r.observer || '')}</div>
             ${r.is_invasive ? '<span class="invasive-tag">외래종</span>' : ''}
           </div>

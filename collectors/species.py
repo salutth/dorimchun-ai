@@ -173,8 +173,16 @@ def collect_river(river_name, lat, lng):
         obs_lat = obs.get("geojson", {}).get("coordinates", [0, 0])[1] if obs.get("geojson") else None
         obs_lng = obs.get("geojson", {}).get("coordinates", [0, 0])[0] if obs.get("geojson") else None
         observed = obs.get("observed_on", "")
-        photos = obs.get("photos", [])
-        photo_url = photos[0].get("url", "").replace("square", "medium") if photos else ""
+        photos = obs.get("photos") or obs.get("observation_photos") or []
+        photo_url = ""
+        if photos:
+            p = photos[0]
+            if isinstance(p, dict):
+                raw = p.get("url") or p.get("photo", {}).get("url", "")
+                if raw:
+                    photo_url = raw.replace("square", "medium").replace("small", "medium")
+        if not photo_url and obs.get("id"):
+            photo_url = f"https://inaturalist-open-data.s3.amazonaws.com/photos/{obs['id']}/medium.jpg"
         observer = obs.get("user", {}).get("login", "")
 
         is_invasive = species_name in INVASIVE_SPECIES
