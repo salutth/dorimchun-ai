@@ -281,6 +281,89 @@
       .grid { grid-template-columns: 1fr; }
       header { flex-direction: column; gap: 0.5rem; }
     }
+
+    /* 보고서 모달 */
+    .report-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 9999;
+      overflow-y: auto;
+    }
+    .report-overlay.active { display: block; }
+    .report-page {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: #fff;
+      color: #222;
+      padding: 2.5rem;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .report-page h1 { font-size: 1.5rem; margin-bottom: 0.3rem; color: #1a1a2e; }
+    .report-page h2 {
+      font-size: 1rem;
+      margin: 1.5rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 2px solid #7873f5;
+      color: #333;
+    }
+    .report-page table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 12px; }
+    .report-page th { background: #f4f4f8; padding: 6px 8px; text-align: left; font-weight: 600; border: 1px solid #ddd; }
+    .report-page td { padding: 5px 8px; border: 1px solid #ddd; }
+    .report-page .rpt-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .report-page .rpt-safe { background: #e8f8f0; color: #27ae60; }
+    .report-page .rpt-warning { background: #fef5e7; color: #e67e22; }
+    .report-page .rpt-danger { background: #fde8e8; color: #e74c3c; }
+    .report-page .rpt-section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .report-page .rpt-stat-box {
+      background: #f8f8fc;
+      border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+    }
+    .report-page .rpt-stat-box .val { font-size: 1.5rem; font-weight: 800; color: #7873f5; }
+    .report-page .rpt-stat-box .label { font-size: 0.75rem; color: #888; }
+    .report-toolbar {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+    }
+    .report-toolbar button {
+      padding: 0.5rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .report-toolbar .btn-print { background: #7873f5; color: #fff; }
+    .report-toolbar .btn-print:hover { background: #6560e0; }
+    .report-toolbar .btn-close { background: #e0e0e0; color: #333; }
+    .report-toolbar .btn-close:hover { background: #ccc; }
+
+    @media print {
+      body > *:not(.report-overlay) { display: none !important; }
+      .report-overlay { position: static; background: none; display: block !important; }
+      .report-page { margin: 0; padding: 1.5rem; border-radius: 0; box-shadow: none; }
+      .report-toolbar { display: none !important; }
+      .report-page h2 { break-after: avoid; }
+      .report-page table { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -291,7 +374,7 @@
       <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
       <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
       <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-      <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+      <a href="javascript:void(0)" onclick="openReport()" class="badge safe" style="text-decoration:none;cursor:pointer">📑 보고서</a>
       <span class="time-label" id="lastUpdate">로딩중...</span>
     </div>
   </header>
@@ -579,6 +662,15 @@
     </div>
   </div>
 
+  <!-- 하천별 보고서 모달 -->
+  <div class="report-overlay" id="reportOverlay">
+    <div class="report-toolbar" style="max-width:800px;margin:2rem auto 0">
+      <button class="btn-print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+      <button class="btn-close" onclick="closeReport()">닫기</button>
+    </div>
+    <div class="report-page" id="reportContent"></div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://luczuisihsskyhhqgviy.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Y3p1aXNpaHNza3loaHFndml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODEyOTMsImV4cCI6MjA5ODU1NzI5M30.0OUvdrYVWMnwGpE8vq6EeW-cMI9cZ2bw8ShMwrJARuU';
@@ -694,7 +786,7 @@
         <a href="/today" class="badge warning" style="text-decoration:none">📊 오늘</a>
         <a href="/mission" class="badge danger" style="text-decoration:none">🎯 미션</a>
         <a href="/play" class="badge" style="text-decoration:none;background:#7873f5;color:#fff">🎮 퀴즈</a>
-        <a href="/analysis" class="badge safe" style="text-decoration:none">📑 보고서</a>
+        <a href="javascript:void(0)" onclick="openReport()" class="badge safe" style="text-decoration:none;cursor:pointer">📑 보고서</a>
         <span class="badge danger">${dangerN} 위험</span>
         <span class="badge warning">${warnN} 주의</span>
         <span class="badge safe">${safeN} 안전</span>
@@ -1885,6 +1977,213 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    // --- 하천별 보고서 출력 ---
+    function closeReport() {
+      document.getElementById('reportOverlay').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    async function openReport() {
+      const river = getSelectedRiver();
+      const el = document.getElementById('reportContent');
+      el.innerHTML = '<div style="text-align:center;padding:3rem;color:#888">보고서 데이터 수집 중...</div>';
+      document.getElementById('reportOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      try {
+        const [readings, species, ehiRows, wqRows, preds, riskRows, cwRows] = await Promise.all([
+          query('river_readings', `select=station,gu,water_level,embankment_height,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=30`),
+          query('species_observations', `select=taxon_name,common_name,korean_name,photo_url,taxon_id,observed_at,is_invasive,observer&river=eq.${encodeURIComponent(river)}&order=observed_at.desc&limit=30`),
+          query('ehi_scores', `select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&river=eq.${encodeURIComponent(river)}&order=calculated_at.desc&limit=1`),
+          query('water_quality', `select=station_name,ph,dissolved_oxygen,water_temp,total_nitrogen,total_phosphorus,do_grade,measured_at&order=measured_at.desc&limit=100`),
+          query('flood_predictions', `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,predicted_at,target_time&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=100`),
+          query('flood_risk_index', `select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,resilience_average,disaster_stage,calculated_at&river=eq.${encodeURIComponent(river)}&order=calculated_at.desc&limit=10`),
+          query('citizen_water_quality', `select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,water_color,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=10`),
+        ]);
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+        const timeStr = now.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+
+        let html = `<h1>🏞️ ${esc(river)} 하천 생태 보고서</h1>
+          <div style="color:#888;font-size:12px;margin-bottom:1.5rem">
+            RiverWatch 자동 생성 · ${dateStr} ${timeStr} 기준
+          </div>`;
+
+        // 1. 수위 현황
+        html += '<h2>💧 수위 현황</h2>';
+        const seenStations = new Set();
+        const uniqueReadings = readings.filter(r => { if (seenStations.has(r.station)) return false; seenStations.add(r.station); return true; });
+        if (uniqueReadings.length) {
+          html += '<table><thead><tr><th>관측소</th><th>구</th><th>수위(cm)</th><th>제방(cm)</th><th>비율(%)</th><th>상태</th><th>측정시각</th></tr></thead><tbody>';
+          uniqueReadings.forEach(r => {
+            const badge = r.status === 'danger' ? 'rpt-danger' : r.status === 'warning' ? 'rpt-warning' : 'rpt-safe';
+            const label = r.status === 'danger' ? '위험' : r.status === 'warning' ? '주의' : '안전';
+            const t = r.measured_at ? new Date(r.measured_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+            html += `<tr><td>${esc(r.station)}</td><td>${esc(r.gu||'')}</td><td>${r.water_level}</td><td>${r.embankment_height||'-'}</td><td>${r.level_ratio}%</td><td><span class="rpt-badge ${badge}">${label}</span></td><td>${t}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">수위 데이터 없음</p>';
+        }
+
+        // 2. EHI 생태건강도
+        html += '<h2>🌿 생태건강도 (EHI)</h2>';
+        if (ehiRows.length) {
+          const e = ehiRows[0];
+          const gradeLabels = {A:'매우좋음', B:'좋음', C:'보통', D:'나쁨', E:'매우나쁨'};
+          html += `<div class="rpt-section-grid">
+            <div class="rpt-stat-box"><div class="val" style="color:${{A:'#2ecc71',B:'#27ae60',C:'#f39c12',D:'#e67e22',E:'#e74c3c'}[e.grade]||'#888'}">${e.grade}</div><div class="label">${gradeLabels[e.grade]||''}</div></div>
+            <div class="rpt-stat-box"><div class="val">${(e.ehi_score||0).toFixed(1)}</div><div class="label">EHI 점수 (100점 만점)</div></div>
+            <div class="rpt-stat-box"><div class="val">${e.species_count||0}</div><div class="label">관찰 종 수</div></div>
+            <div class="rpt-stat-box"><div class="val">${(e.biodiversity_score||0).toFixed(0)}</div><div class="label">생물다양성 점수</div></div>
+          </div>
+          <table style="margin-top:0.5rem"><thead><tr><th>항목</th><th>점수</th></tr></thead><tbody>
+            <tr><td>생물다양성</td><td>${(e.biodiversity_score||0).toFixed(1)}</td></tr>
+            <tr><td>수위 안정성</td><td>${(e.water_stability_score||0).toFixed(1)}</td></tr>
+            <tr><td>비외래종 비율</td><td>${(e.non_invasive_score||0).toFixed(1)}</td></tr>
+            <tr><td>관찰 빈도</td><td>${(e.observation_freq_score||0).toFixed(1)}</td></tr>
+          </tbody></table>`;
+        } else {
+          html += '<p style="color:#999">EHI 데이터 없음</p>';
+        }
+
+        // 3. 생물 관찰
+        html += '<h2>🔬 생물 관찰 (최근 30일)</h2>';
+        if (species.length) {
+          const uniqueSpecies = new Set(species.map(s => s.taxon_name).filter(n => n && n !== '미확인'));
+          const invasiveCount = species.filter(s => s.is_invasive).length;
+          html += `<p>총 <strong>${species.length}</strong>건 관찰 · 고유 종 <strong>${uniqueSpecies.size}</strong>종 · 외래종 <strong>${invasiveCount}</strong>건</p>`;
+          html += '<table><thead><tr><th>학명</th><th>국명</th><th>관찰일</th><th>관찰자</th><th>외래종</th></tr></thead><tbody>';
+          const seenSp = new Set();
+          species.forEach(s => {
+            const key = s.taxon_name || '미확인';
+            if (seenSp.has(key)) return;
+            seenSp.add(key);
+            const d = s.observed_at ? new Date(s.observed_at).toLocaleDateString('ko-KR') : '';
+            html += `<tr><td style="font-style:italic">${esc(key)}</td><td>${esc(s.korean_name||s.common_name||'')}</td><td>${d}</td><td>${esc(s.observer||'')}</td><td>${s.is_invasive ? '<span class="rpt-badge rpt-danger">외래종</span>' : '-'}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">관찰 데이터 없음</p>';
+        }
+
+        // 4. 생태계교란종
+        html += '<h2>🚨 생태계교란종</h2>';
+        const INVASIVE_DATA_RPT = {
+          '도림천': { plants: ['가시박','환삼덩굴','단풍잎돼지풀','미국쑥부쟁이'], animals: ['붉은귀거북'], fish: ['블루길'] },
+          '안양천': { plants: ['가시박','환삼덩굴','단풍잎돼지풀','돼지풀'], animals: ['붉은귀거북','황소개구리'], fish: ['블루길','큰입배스'] },
+          '중랑천': { plants: ['가시박','환삼덩굴','단풍잎돼지풀','돼지풀','미국쑥부쟁이'], animals: ['붉은귀거북'], fish: ['블루길','큰입배스'] },
+          '청계천': { plants: ['환삼덩굴','미국쑥부쟁이','서양등골나물'], animals: [], fish: ['블루길','큰입배스'] },
+          '탄천': { plants: ['가시박','단풍잎돼지풀','돼지풀','환삼덩굴'], animals: ['황소개구리','붉은귀거북'], fish: ['블루길','큰입배스'] },
+          '양재천': { plants: ['환삼덩굴','단풍잎돼지풀','미국쑥부쟁이'], animals: ['붉은귀거북'], fish: ['블루길'] },
+          '불광천': { plants: ['환삼덩굴','돼지풀','미국쑥부쟁이'], animals: [], fish: [] },
+          '홍제천': { plants: ['환삼덩굴','단풍잎돼지풀'], animals: [], fish: [] },
+          '성북천': { plants: ['환삼덩굴','미국쑥부쟁이'], animals: [], fish: [] },
+          '방학천': { plants: ['환삼덩굴','돼지풀'], animals: [], fish: [] },
+          '우이천': { plants: ['환삼덩굴','단풍잎돼지풀','미국쑥부쟁이'], animals: [], fish: ['블루길'] },
+          '정릉천': { plants: ['환삼덩굴','돼지풀'], animals: [], fish: [] },
+          '묵동천': { plants: ['환삼덩굴','미국쑥부쟁이','돼지풀'], animals: [], fish: [] },
+          '전농천': { plants: ['환삼덩굴','단풍잎돼지풀'], animals: [], fish: [] },
+          '월계천': { plants: ['환삼덩굴','돼지풀','미국쑥부쟁이'], animals: [], fish: ['블루길'] },
+          '반포천': { plants: ['환삼덩굴','미국쑥부쟁이'], animals: [], fish: [] },
+          '여의천': { plants: ['환삼덩굴','단풍잎돼지풀','돼지풀'], animals: ['붉은귀거북'], fish: ['블루길'] },
+          '봉원천': { plants: ['환삼덩굴','돼지풀'], animals: [], fish: [] },
+          '녹번천': { plants: ['환삼덩굴','미국쑥부쟁이'], animals: [], fish: [] },
+          '세곡천': { plants: ['환삼덩굴','단풍잎돼지풀'], animals: [], fish: [] },
+          '내부천': { plants: ['환삼덩굴','돼지풀','미국쑥부쟁이'], animals: [], fish: [] },
+        };
+        const inv = INVASIVE_DATA_RPT[river];
+        if (inv) {
+          const total = inv.plants.length + inv.animals.length + inv.fish.length;
+          html += `<p>확인된 교란종 <strong>${total}</strong>종 (식물 ${inv.plants.length} · 동물 ${inv.animals.length} · 어류 ${inv.fish.length})</p>`;
+          if (inv.plants.length) html += `<p>🌿 교란식물: ${inv.plants.map(p => esc(p)).join(', ')}</p>`;
+          if (inv.animals.length) html += `<p>🐢 교란동물: ${inv.animals.map(a => esc(a)).join(', ')}</p>`;
+          if (inv.fish.length) html += `<p>🐟 교란어류: ${inv.fish.map(f => esc(f)).join(', ')}</p>`;
+        } else {
+          html += '<p style="color:#999">교란종 데이터 없음</p>';
+        }
+
+        // 5. 수질 (TMS)
+        html += '<h2>💧 수질 모니터링 (TMS)</h2>';
+        const riverWq = Object.values(wqRows.reduce((acc, r) => {
+          if (r.station_name && !acc[r.station_name]) acc[r.station_name] = r;
+          return acc;
+        }, {}));
+        if (riverWq.length) {
+          html += '<table><thead><tr><th>관측소</th><th>pH</th><th>DO(mg/L)</th><th>수온(°C)</th><th>T-N</th><th>T-P</th><th>등급</th></tr></thead><tbody>';
+          riverWq.forEach(r => {
+            html += `<tr><td>${esc(r.station_name)}</td><td>${r.ph??'-'}</td><td>${r.dissolved_oxygen??'-'}</td><td>${r.water_temp??'-'}</td><td>${r.total_nitrogen??'-'}</td><td>${r.total_phosphorus??'-'}</td><td>${esc(r.do_grade||'-')}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">TMS 수질 데이터 없음</p>';
+        }
+
+        // 5-1. 시민 측정
+        if (cwRows.length) {
+          html += '<h2>🧪 시민 수질 측정</h2>';
+          html += '<table><thead><tr><th>측정자</th><th>pH</th><th>DO</th><th>수온</th><th>탁도</th><th>등급</th><th>수색</th><th>일시</th></tr></thead><tbody>';
+          cwRows.forEach(r => {
+            const t = r.measured_at ? new Date(r.measured_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+            html += `<tr><td>${esc(r.observer||'')}</td><td>${r.ph??'-'}</td><td>${r.dissolved_oxygen??'-'}</td><td>${r.water_temp??'-'}</td><td>${r.turbidity??'-'}</td><td>${esc(r.do_grade||'-')}</td><td>${esc(r.water_color||'-')}</td><td>${t}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        }
+
+        // 6. AI 수위 예측
+        html += '<h2>🧠 AI 수위 예측 (LSTM)</h2>';
+        if (preds.length) {
+          const byStation = {};
+          preds.forEach(p => { if (!byStation[p.station]) byStation[p.station] = []; byStation[p.station].push(p); });
+          html += '<table><thead><tr><th>관측소</th><th>+1h</th><th>+3h</th><th>+6h</th><th>+12h</th><th>신뢰도</th></tr></thead><tbody>';
+          for (const [stn, ps] of Object.entries(byStation)) {
+            const latestAt = ps[0].predicted_at;
+            const lp = ps.filter(p => p.predicted_at === latestAt);
+            const get = h => lp.find(p => p.prediction_hour === h);
+            const cell = h => {
+              const p = get(h);
+              if (!p) return '<td>-</td>';
+              const badge = p.predicted_status === 'danger' ? 'rpt-danger' : p.predicted_status === 'warning' ? 'rpt-warning' : 'rpt-safe';
+              return `<td><span class="rpt-badge ${badge}">${p.predicted_ratio.toFixed(1)}%</span></td>`;
+            };
+            const conf = get(1);
+            html += `<tr><td>${esc(stn)}</td>${cell(1)}${cell(3)}${cell(6)}${cell(12)}<td>${conf ? (conf.confidence*100).toFixed(0)+'%' : '-'}</td></tr>`;
+          }
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">예측 데이터 없음</p>';
+        }
+
+        // 7. K-SAFE 홍수위험지수
+        html += '<h2>🛡️ K-SAFE 홍수위험지수</h2>';
+        const latestRisk = {};
+        riskRows.forEach(r => { if (!latestRisk[r.station]) latestRisk[r.station] = r; });
+        const riskList = Object.values(latestRisk);
+        if (riskList.length) {
+          const gradeLabelsR = { critical:'🔴 심각', high:'🟠 높음', moderate:'🟡 보통', low:'🟢 낮음', minimal:'⚪ 최소' };
+          const stageLabelsR = { prevention:'예방', preparedness:'대비', response:'대응', recovery:'복구' };
+          html += '<table><thead><tr><th>관측소</th><th>종합지수</th><th>등급</th><th>단계</th><th>W1 수위</th><th>W2 기상</th><th>W3 AI</th><th>W4 이력</th><th>4R 평균</th></tr></thead><tbody>';
+          riskList.forEach(r => {
+            html += `<tr><td>${esc(r.station)}</td><td><strong>${r.composite_score}</strong></td><td>${gradeLabelsR[r.risk_grade]||r.risk_grade}</td><td>${stageLabelsR[r.disaster_stage]||r.disaster_stage}</td><td>${(r.w1_water_level||0).toFixed(0)}</td><td>${(r.w2_weather||0).toFixed(0)}</td><td>${(r.w3_prediction||0).toFixed(0)}</td><td>${(r.w4_history||0).toFixed(0)}</td><td>${(r.resilience_average||0).toFixed(0)}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">위험지수 데이터 없음</p>';
+        }
+
+        // 꼬리말
+        html += `<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">
+          RiverWatch · 서울 하천 생태 모니터링 시스템<br>
+          본 보고서는 자동 수집 데이터 기반으로 생성되었습니다 · ${dateStr}
+        </div>`;
+
+        el.innerHTML = html;
+      } catch (err) {
+        el.innerHTML = `<div style="color:#e74c3c;padding:2rem;text-align:center">보고서 생성 실패: ${esc(err.message)}</div>`;
+      }
     }
   </script>
   <script src="gate.js"></script>
