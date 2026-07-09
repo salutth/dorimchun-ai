@@ -16,6 +16,7 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      HRFCO_API_KEY: ${{ secrets.HRFCO_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +25,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 수위 모니터링
+      - name: 수위 모니터링 (지류)
         run: python river_monitor.py
+        continue-on-error: true
+
+      - name: 한강 본류 수위
+        run: python collectors/hangang_monitor.py
         continue-on-error: true
 
       - name: 생물 관찰 수집

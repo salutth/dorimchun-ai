@@ -6,6 +6,7 @@ set PROJECT=C:\Users\salut\sakyowon-ai
 echo [%date% %time%] RiverWatch 데이터 수집 시작 >> "%PROJECT%\collector.log"
 
 "%PYTHON%" "%PROJECT%\river_monitor.py" >> "%PROJECT%\collector.log" 2>&1
+"%PYTHON%" "%PROJECT%\collectors\hangang_monitor.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\species.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\ehi.py" >> "%PROJECT%\collector.log" 2>&1
 "%PYTHON%" "%PROJECT%\collectors\invasive_alert.py" >> "%PROJECT%\collector.log" 2>&1

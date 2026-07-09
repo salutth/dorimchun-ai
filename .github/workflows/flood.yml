@@ -16,6 +16,7 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      HRFCO_API_KEY: ${{ secrets.HRFCO_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4

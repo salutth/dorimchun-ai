@@ -600,6 +600,10 @@
       '신의교': [37.6350, 127.0650], '월계1교': [37.6220, 127.0590],
       '용두교': [37.5820, 127.0250], '성동교': [37.5550, 127.0400],
       '마장2교': [37.5650, 127.0300],
+      '잠수교': [37.5130, 126.9960], '한남대교': [37.5170, 127.0050],
+      '반포대교': [37.5110, 126.9940], '동작대교': [37.5080, 126.9800],
+      '원효대교': [37.5250, 126.9530], '마포대교': [37.5320, 126.9470],
+      '여의상류': [37.5260, 126.9330], '행주대교': [37.5930, 126.8380],
     };
 
     const statusColors = { danger: '#e74c3c', warning: '#f39c12', safe: '#2ecc71', unknown: '#666' };
@@ -616,7 +620,13 @@
         const labels = { critical: '긴급', danger: '위험', warning: '주의' };
         const latest = alerts[0].collected_at;
         document.getElementById('alertTime').textContent = new Date(latest).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-        list.innerHTML = alerts.map(a => {
+        const seenStations = new Set();
+        const uniqueAlerts = alerts.filter(a => {
+          if (seenStations.has(a.station)) return false;
+          seenStations.add(a.station);
+          return true;
+        });
+        list.innerHTML = uniqueAlerts.map(a => {
           const icon = icons[a.alert_level] || '⚪';
           const label = labels[a.alert_level] || a.alert_level;
           const ratio = a.threshold > 0 ? ((a.water_level / a.threshold) * 100).toFixed(1) : '-';
@@ -647,7 +657,7 @@
 
     async function loadMap() {
       const rows = await query('river_readings',
-        'select=station,river,gu,water_level,level_ratio,status,measured_at,collected_at&order=id.desc&limit=21');
+        'select=station,river,gu,water_level,level_ratio,status,measured_at,collected_at&order=collected_at.desc&limit=500');
 
       const seen = new Set();
       let dangerN = 0, warnN = 0, safeN = 0;
@@ -728,7 +738,7 @@
     // --- TABLE ---
     async function loadTable() {
       const rows = await query('river_readings',
-        'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=level_ratio.desc&limit=21');
+        'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=collected_at.desc&limit=500');
 
       const seen = new Set();
       const unique = rows.filter(r => { if (seen.has(r.station)) return false; seen.add(r.station); return true; });
@@ -760,6 +770,30 @@
       document.getElementById('speciesRiverName').textContent = river;
       const rows = await query('river_readings',
         `select=station,water_level,level_ratio,collected_at&river=eq.${encodeURIComponent(river)}&order=collected_at.asc&limit=100`);
+
+      if (rows.length === 0) {
+        if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+        const chartCanvas = document.getElementById('chart');
+        if (chartCanvas) {
+          chartCanvas.style.display = 'none';
+          let noData = chartCanvas.parentElement.querySelector('.no-data-msg');
+          if (!noData) {
+            noData = document.createElement('div');
+            noData.className = 'no-data-msg';
+            chartCanvas.parentElement.appendChild(noData);
+          }
+          noData.style.cssText = 'text-align:center;padding:40px;color:#999';
+          const detail = river === '한강' ? '한강 본류는 국토부(한강홍수통제소) 관할로, 서울시 API에서 제공되지 않을 수 있습니다.' : '수집기가 데이터를 저장하면 자동으로 표시됩니다.';
+          noData.innerHTML = `<p style="font-size:1.2em">📊 ${esc(river)} 수위 데이터가 아직 없습니다</p><p style="font-size:0.85em;margin-top:8px">${detail}</p>`;
+        }
+        return;
+      }
+      const chartCanvas = document.getElementById('chart');
+      if (chartCanvas) {
+        chartCanvas.style.display = '';
+        const noData = chartCanvas.parentElement.querySelector('.no-data-msg');
+        if (noData) noData.remove();
+      }
 
       const stations = {};
       rows.forEach(r => {
