@@ -660,6 +660,86 @@
       </div>
       <div class="card-body"><div style="height:320px;padding:0.5rem"><canvas id="compareChart"></canvas></div></div>
     </div>
+
+    <!-- K-SAFE 홍수위험지수 -->
+    <div class="card full-width">
+      <div class="card-header">
+        🛡️ K-SAFE 홍수위험지수
+        <span class="time-label" id="riskTime"></span>
+      </div>
+      <div class="card-body" style="padding:1rem">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;margin-bottom:1rem" id="riskSummary">
+          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">🔴 심각 Critical</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#e74c3c" id="riskCritical">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">🟠 높음 High</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#e67e22" id="riskHigh">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">🟡 보통 Moderate</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#f1c40f" id="riskModerate">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">🟢 낮음 Low</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#2ecc71" id="riskLow">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:10px;padding:0.8rem;text-align:center">
+            <div style="font-size:0.7rem;color:#888">⚪ 최소 Minimal</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#95a5a6" id="riskMinimal">-</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div style="height:280px"><canvas id="riskRadar"></canvas></div>
+          <div style="height:280px"><canvas id="riskBar"></canvas></div>
+        </div>
+        <div style="margin-top:1rem;overflow-x:auto" id="riskTable"></div>
+      </div>
+    </div>
+
+    <!-- AI 수위 예측 (LSTM) -->
+    <div class="card">
+      <div class="card-header">
+        🧠 AI 수위 예측 (LSTM)
+        <span id="predRiverName" style="color:#7873f5"></span>
+        <span class="time-label" id="predSummary"></span>
+      </div>
+      <div class="card-body">
+        <div style="height:260px;padding:0.5rem"><canvas id="predictionChart"></canvas></div>
+        <div id="predTable" style="overflow-x:auto;margin-top:0.5rem"></div>
+      </div>
+    </div>
+
+    <!-- AI 예측 검증 -->
+    <div class="card">
+      <div class="card-header">
+        🔍 AI 예측 검증 (Guardian Agent)
+        <span class="time-label" id="verifyTime"></span>
+      </div>
+      <div class="card-body" style="padding:1rem">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem" id="verifyMetrics">
+          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
+            <div style="font-size:0.65rem;color:#888">평균절대오차 MAE</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAE">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
+            <div style="font-size:0.65rem;color:#888">평균제곱근오차 RMSE</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vRMSE">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
+            <div style="font-size:0.65rem;color:#888">평균백분율오차 MAPE</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAPE">-</div>
+          </div>
+          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
+            <div style="font-size:0.65rem;color:#888">상태정확도 Accuracy</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vAccuracy">-</div>
+          </div>
+        </div>
+        <div style="height:220px"><canvas id="verifyChart"></canvas></div>
+        <div id="verifyDetail" style="overflow-x:auto;margin-top:0.5rem"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 하천별 보고서 모달 -->
@@ -937,6 +1017,104 @@
           },
         },
       });
+    }
+
+    // --- K-SAFE FLOOD RISK INDEX ---
+    let riskRadarChart = null, riskBarChart = null;
+    async function loadRiskIndex() {
+      const rows = await query('flood_risk_index',
+        'select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,cross_validation,disaster_stage,trend_direction,resilience_robustness,resilience_redundancy,resilience_resourcefulness,resilience_rapidity,resilience_average,data_sources,calculated_at&order=calculated_at.desc&limit=50');
+
+      const latest = {};
+      rows.forEach(r => { if (!latest[r.station]) latest[r.station] = r; });
+      const stations = Object.values(latest).sort((a,b) => (b.composite_score||0) - (a.composite_score||0));
+
+      if (!stations.length) {
+        document.getElementById('riskTable').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:1rem">위험지수 데이터 없음</div>';
+        return;
+      }
+
+      let critical=0, high=0, moderate=0, low=0, minimal=0;
+      stations.forEach(s => {
+        if (s.risk_grade==='critical') critical++;
+        else if (s.risk_grade==='high') high++;
+        else if (s.risk_grade==='moderate') moderate++;
+        else if (s.risk_grade==='low') low++;
+        else minimal++;
+      });
+      document.getElementById('riskCritical').textContent = critical;
+      document.getElementById('riskHigh').textContent = high;
+      document.getElementById('riskModerate').textContent = moderate;
+      document.getElementById('riskLow').textContent = low;
+      document.getElementById('riskMinimal').textContent = minimal;
+
+      if (stations[0] && stations[0].calculated_at) {
+        const t = new Date(stations[0].calculated_at);
+        document.getElementById('riskTime').textContent = t.toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+      }
+
+      const top = stations[0];
+      if (riskRadarChart) riskRadarChart.destroy();
+      riskRadarChart = new Chart(document.getElementById('riskRadar'), {
+        type: 'radar',
+        data: {
+          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력', 'R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
+          datasets: [{
+            label: `${top.station} (${top.river})`,
+            data: [top.w1_water_level, top.w2_weather, top.w3_prediction, top.w4_history,
+                   top.resilience_robustness, top.resilience_redundancy, top.resilience_resourcefulness, top.resilience_rapidity],
+            backgroundColor: '#7873f522',
+            borderColor: '#7873f5',
+            pointBackgroundColor: '#7873f5',
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 10 } } } },
+          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } } }
+        }
+      });
+
+      const gradeColors = { critical:'#e74c3c', high:'#e67e22', moderate:'#f1c40f', low:'#2ecc71', minimal:'#95a5a6' };
+      if (riskBarChart) riskBarChart.destroy();
+      riskBarChart = new Chart(document.getElementById('riskBar'), {
+        type: 'bar',
+        data: {
+          labels: stations.map(s => s.station),
+          datasets: [{
+            label: '종합 위험지수',
+            data: stations.map(s => s.composite_score),
+            backgroundColor: stations.map(s => (gradeColors[s.risk_grade]||'#666') + '88'),
+            borderColor: stations.map(s => gradeColors[s.risk_grade]||'#666'),
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          scales: { x: { max: 100, ticks: { color: '#666' }, grid: { color: '#1a1a28' } }, y: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { display: false } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const stageLabels = { prevention:'🟢 예방', preparedness:'🟡 대비', response:'🔴 대응', recovery:'🔵 복구' };
+      const gradeLabels = { critical:'🔴 심각 Critical', high:'🟠 높음 High', moderate:'🟡 보통 Moderate', low:'🟢 낮음 Low', minimal:'⚪ 최소 Minimal' };
+      let tbl = '<table><thead><tr><th>관측소</th><th>하천</th><th>지수</th><th>등급</th><th>단계</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>4R</th><th>검증</th></tr></thead><tbody>';
+      stations.forEach(s => {
+        tbl += `<tr>
+          <td>${esc(s.station)}</td><td>${esc(s.river)}</td>
+          <td style="font-weight:700;color:${gradeColors[s.risk_grade]||'#666'}">${s.composite_score}</td>
+          <td>${gradeLabels[s.risk_grade]||s.risk_grade}</td>
+          <td>${stageLabels[s.disaster_stage]||s.disaster_stage}</td>
+          <td>${(s.w1_water_level||0).toFixed(0)}</td>
+          <td>${(s.w2_weather||0).toFixed(0)}</td>
+          <td>${(s.w3_prediction||0).toFixed(0)}</td>
+          <td>${(s.w4_history||0).toFixed(0)}</td>
+          <td>${(s.resilience_average||0).toFixed(0)}</td>
+          <td>${(s.cross_validation||0).toFixed(2)}</td>
+        </tr>`;
+      });
+      tbl += '</tbody></table>';
+      document.getElementById('riskTable').innerHTML = tbl;
     }
 
     // --- AI PREDICTION ---
@@ -1964,7 +2142,7 @@
     if (savedObs) document.getElementById('cwObserver').value = savedObs;
 
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare(), loadRiskIndex()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
@@ -1972,7 +2150,7 @@
       .catch(err => console.error('Load error:', err));
 
     setInterval(() => {
-      Promise.all([loadMap(), loadTable(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality()]);
+      Promise.all([loadMap(), loadTable(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality(), loadRiskIndex()]);
     }, 5 * 60 * 1000);
 
     if ('serviceWorker' in navigator) {
