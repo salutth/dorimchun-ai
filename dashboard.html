@@ -424,23 +424,6 @@
       <div class="card-body"><div id="chart-container"><canvas id="chart"></canvas></div></div>
     </div>
 
-    <div class="card full-width">
-      <div class="card-header">
-        📊 AI 예측 검증 — <span id="verifyRiverName">도림천</span>
-        <span class="time-label" id="verifySummary"></span>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:0.5rem">
-          <div style="height:300px"><canvas id="verifyChart"></canvas></div>
-          <div>
-            <div id="verifyMetrics" style="padding:0.5rem"></div>
-            <div style="height:180px;margin-top:0.5rem"><canvas id="errorChart"></canvas></div>
-          </div>
-        </div>
-        <div id="verifyDetail" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
-      </div>
-    </div>
-
     <div class="card">
       <div class="card-header">
         <span id="speciesRiverName">도림천</span> 생물 관찰 (최근 30일)
@@ -700,34 +683,23 @@
     </div>
 
     <!-- AI 예측 검증 -->
-    <div class="card">
+    <div class="card full-width">
       <div class="card-header">
-        🔍 AI 예측 검증 (Guardian Agent)
-        <span class="time-label" id="verifyTime"></span>
+        📊 AI 예측 검증 — <span id="verifyRiverName">도림천</span>
+        <span class="time-label" id="verifySummary"></span>
       </div>
-      <div class="card-body" style="padding:1rem">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem" id="verifyMetrics">
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균절대오차 MAE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균제곱근오차 RMSE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vRMSE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">평균백분율오차 MAPE</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vMAPE">-</div>
-          </div>
-          <div style="background:#12121a;border-radius:8px;padding:0.6rem;text-align:center">
-            <div style="font-size:0.65rem;color:#888">상태정확도 Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#7873f5" id="vAccuracy">-</div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:0.5rem">
+          <div style="height:300px"><canvas id="verifyChart"></canvas></div>
+          <div>
+            <div id="verifyMetrics" style="padding:0.5rem"></div>
+            <div style="height:180px;margin-top:0.5rem"><canvas id="errorChart"></canvas></div>
           </div>
         </div>
-        <div style="height:220px"><canvas id="verifyChart"></canvas></div>
-        <div id="verifyDetail" style="overflow-x:auto;margin-top:0.5rem"></div>
+        <div id="verifyDetail" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
       </div>
     </div>
+
   </div>
 
   <!-- 하천별 보고서 모달 -->
