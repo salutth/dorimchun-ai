@@ -261,22 +261,29 @@
     }
 
     @media print {
+      * { overflow: visible !important; }
       body { background: #fff; color: #222; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      header { background: #fff; border-bottom: 2px solid #333; }
+      header { background: #fff; border-bottom: 2px solid #333; position: relative; }
       header h1 span { color: #4a45c0; }
       header a, .btn-print { display: none !important; }
       .container { max-width: 100%; padding: 0; }
-      .section { background: #fff; border: 1px solid #ddd; page-break-inside: avoid; }
+      .section { background: #fff; border: 1px solid #ddd; page-break-inside: auto; break-inside: auto; margin-bottom: 1rem; }
+      .section h3 { page-break-after: avoid; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; }
       .stat-card { background: #f8f8f8; border: 1px solid #ddd; }
       .stat-card .value { color: #333; }
       .stat-card.alert .value { color: #e74c3c; }
       .stat-card.good .value { color: #2ecc71; }
-      th { background: #f0f0f0; color: #333; }
+      th { background: #f0f0f0 !important; color: #333; }
       td { color: #333; border-bottom: 1px solid #eee; }
       tr:hover td { background: transparent; }
-      .chart-container { height: 200px; }
+      .chart-container { position: relative; height: 250px !important; page-break-inside: avoid; break-inside: avoid; margin: 0.5rem 0; }
+      .chart-container canvas { max-height: 250px; }
       .species-chip { border: 1px solid #ccc; }
-      .footer { color: #999; }
+      .footer { color: #999; page-break-before: auto; }
+      .rec-list { page-break-inside: avoid; }
+      .summary-grid { page-break-inside: avoid; }
     }
   </style>
 </head>
