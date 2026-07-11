@@ -146,3 +146,77 @@ create index if not exists idx_predictions_created on flood_predictions(created_
 
 alter table flood_predictions
   add constraint uq_predictions unique (station, target_time, predicted_at);
+
+-- 9. K-SAFE 홍수위험지수 (Phase 3-2)
+create table if not exists flood_risk_index (
+  id bigint generated always as identity primary key,
+  station text not null,
+  river text not null,
+  composite_score real not null,
+  risk_grade text not null,
+  w1_water_level real,
+  w2_weather real,
+  w3_prediction real,
+  w4_history real,
+  cross_validation real,
+  disaster_stage text,
+  trend_direction text,
+  resilience_robustness real,
+  resilience_redundancy real,
+  resilience_resourcefulness real,
+  resilience_rapidity real,
+  resilience_average real,
+  data_sources int,
+  calculated_at timestamptz not null
+);
+
+alter table flood_risk_index enable row level security;
+create policy "risk_index_read" on flood_risk_index for select using (true);
+create policy "risk_index_insert" on flood_risk_index for insert with check (true);
+
+create index if not exists idx_risk_index_station on flood_risk_index(station);
+create index if not exists idx_risk_index_river on flood_risk_index(river);
+create index if not exists idx_risk_index_calculated on flood_risk_index(calculated_at desc);
+
+alter table flood_risk_index
+  add constraint uq_flood_risk_index_station_calc unique (station, calculated_at);
+
+-- 10. 침수 경보 (Phase 3-3)
+create table if not exists flood_alerts (
+  id bigint generated always as identity primary key,
+  station text not null,
+  river text not null,
+  alert_level text not null,
+  water_level real,
+  embankment_height real,
+  level_ratio real,
+  message text,
+  issued_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
+alter table flood_alerts enable row level security;
+create policy "flood_alerts_read" on flood_alerts for select using (true);
+create policy "flood_alerts_insert" on flood_alerts for insert with check (true);
+
+alter table flood_alerts
+  add constraint uq_flood_alerts_station_issued unique (station, issued_at);
+
+-- 11. 기상 예보
+create table if not exists weather_forecasts (
+  id bigint generated always as identity primary key,
+  river text not null,
+  forecast_date date,
+  forecast_hour int,
+  rain_probability real,
+  rain_amount real,
+  temperature real,
+  humidity real,
+  wind_speed real,
+  sky_condition text,
+  collected_at timestamptz default now()
+);
+
+alter table weather_forecasts enable row level security;
+create policy "weather_read" on weather_forecasts for select using (true);
+create policy "weather_insert" on weather_forecasts for insert with check (true);
