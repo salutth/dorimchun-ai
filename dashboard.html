@@ -773,7 +773,7 @@
     function esc(str) {
       const d = document.createElement('div');
       d.textContent = str ?? '';
-      return d.innerHTML;
+      return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     async function query(table, params = '') {
@@ -2014,6 +2014,7 @@
       function grade(label, val) {
         if (val === '-') return '<td style="color:#888">-</td>';
         const v = parseFloat(val);
+        const sv = e(val);
         let g = '', c = '';
         if (label === 'pH') { g = (v>=6.5&&v<=8.5)?'정상':'주의'; c = g==='정상'?'#4ade80':'#f59e0b'; }
         else if (label === 'DO') { g = v>=5?'좋음':v>=2?'보통':'나쁨'; c = v>=5?'#4ade80':v>=2?'#f59e0b':'#ef4444'; }
@@ -2021,12 +2022,13 @@
         else if (label === 'BOD') { g = v<=3?'좋음':v<=6?'보통':'나쁨'; c = v<=3?'#4ade80':v<=6?'#f59e0b':'#ef4444'; }
         else if (label === 'COD') { g = v<=6?'좋음':v<=9?'보통':'나쁨'; c = v<=6?'#4ade80':v<=9?'#f59e0b':'#ef4444'; }
         else if (label === 'SS') { g = v<=25?'좋음':v<=50?'보통':'나쁨'; c = v<=25?'#4ade80':v<=50?'#f59e0b':'#ef4444'; }
-        else return `<td>${val}</td>`;
-        return `<td>${val} <span style="color:${c};font-weight:700">(${g})</span></td>`;
+        else return `<td>${sv}</td>`;
+        return `<td>${sv} <span style="color:${c};font-weight:700">(${g})</span></td>`;
       }
 
+      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
       const w = window.open('', '_blank');
-      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>수질 측정 보고서 - ${river}</title>
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>수질 측정 보고서 - ${e(river)}</title>
       <style>
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display:none!important; } }
         body { font-family: 'Pretendard','Malgun Gothic',sans-serif; max-width:700px; margin:2rem auto; padding:0 1.5rem; color:#222; line-height:1.6; }
@@ -2050,29 +2052,29 @@
       <div class="subtitle">RiverWatch 도림천 AI 하천 모니터링 플랫폼</div>
       <h2>📋 측정 개요</h2>
       <dl class="info-grid">
-        <dt>하천명</dt><dd>${river}</dd>
-        <dt>측정자</dt><dd>${observer}</dd>
-        <dt>측정일시</dt><dd>${dateStr} ${timeStr}</dd>
-        <dt>날씨</dt><dd>${weather}</dd>
-        <dt>기온</dt><dd>${airTemp !== '-' ? airTemp + '°C' : '-'}</dd>
-        <dt>습도</dt><dd>${humidity !== '-' ? humidity + '%' : '-'}</dd>
-        <dt>최근강수</dt><dd>${rain}</dd>
+        <dt>하천명</dt><dd>${e(river)}</dd>
+        <dt>측정자</dt><dd>${e(observer)}</dd>
+        <dt>측정일시</dt><dd>${e(dateStr)} ${e(timeStr)}</dd>
+        <dt>날씨</dt><dd>${e(weather)}</dd>
+        <dt>기온</dt><dd>${airTemp !== '-' ? e(airTemp) + '°C' : '-'}</dd>
+        <dt>습도</dt><dd>${humidity !== '-' ? e(humidity) + '%' : '-'}</dd>
+        <dt>최근강수</dt><dd>${e(rain)}</dd>
       </dl>
       <h2>🔬 수질 측정값</h2>
       <table>
         <tr><th>항목</th><th>측정값</th><th>항목</th><th>측정값</th></tr>
         <tr><td>pH</td>${grade('pH',ph)}<td>DO (mg/L)</td>${grade('DO',doVal)}</tr>
-        <tr><td>수온 (°C)</td><td>${temp}</td><td>탁도 (NTU)</td>${grade('탁도',turb)}</tr>
-        <tr><td>전기전도도 (µS/cm)</td><td>${ec}</td><td>BOD (mg/L)</td>${grade('BOD',bod)}</tr>
+        <tr><td>수온 (°C)</td><td>${e(temp)}</td><td>탁도 (NTU)</td>${grade('탁도',turb)}</tr>
+        <tr><td>전기전도도 (µS/cm)</td><td>${e(ec)}</td><td>BOD (mg/L)</td>${grade('BOD',bod)}</tr>
         <tr><td>COD (mg/L)</td>${grade('COD',cod)}<td>SS (mg/L)</td>${grade('SS',ss)}</tr>
       </table>
       <h2>👁️ 현장 관찰</h2>
       <table>
         <tr><th>수색 (물 색깔)</th><th>냄새</th><th>유속</th><th>쓰레기/부유물</th></tr>
-        <tr><td>${color}</td><td>${smell}</td><td>${flow}</td><td>${trash}</td></tr>
+        <tr><td>${e(color)}</td><td>${e(smell)}</td><td>${e(flow)}</td><td>${e(trash)}</td></tr>
       </table>
-      ${evalResult ? '<h2>📊 평가 결과</h2><div class="eval-box">' + evalResult + '</div>' : ''}
-      ${memo ? '<h2>📝 메모</h2><div class="memo-box">' + memo + '</div>' : ''}
+      ${evalResult ? '<h2>📊 평가 결과</h2><div class="eval-box">' + e(evalResult) + '</div>' : ''}
+      ${memo ? '<h2>📝 메모</h2><div class="memo-box">' + e(memo) + '</div>' : ''}
       <div class="footer">© 2026 RiverWatch · 살루트 · AI 활동가 1기 · 사교원<br>dorimchun-ai.pages.dev</div>
       </body></html>`);
       w.document.close();

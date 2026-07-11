@@ -50,8 +50,6 @@ def supabase_get(table, params=""):
     req.add_header("apikey", key)
     req.add_header("Authorization", f"Bearer {key}")
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
 
     try:
         with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:

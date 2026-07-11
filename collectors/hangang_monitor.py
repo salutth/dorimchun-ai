@@ -48,8 +48,6 @@ def load_env():
 def fetch_all_waterlevel(api_key):
     url = f"https://api.hrfco.go.kr/{api_key}/waterlevel/list/10M.json"
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url)
     req.add_header("User-Agent", "RiverWatch/2.3")
     with urllib.request.urlopen(req, timeout=20, context=ctx) as resp:
@@ -59,8 +57,6 @@ def fetch_all_waterlevel(api_key):
 def fetch_station_info(api_key):
     url = f"https://api.hrfco.go.kr/{api_key}/waterlevel/info.json"
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url)
     req.add_header("User-Agent", "RiverWatch/2.3")
     with urllib.request.urlopen(req, timeout=20, context=ctx) as resp:
