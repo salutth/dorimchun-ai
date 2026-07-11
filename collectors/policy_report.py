@@ -455,7 +455,7 @@ type: auto_analysis
 ---
 
 *이 보고서는 RiverWatch Auto Report v2에 의해 자동 생성되었습니다.*
-*도깨비3.0 팀 (AI활동가 1기)*
+*건강한도림천을만드는주민모임.사회혁신교육원*
 """
     return md
 
