@@ -31,8 +31,6 @@ def load_env():
 def fetch_water_quality(api_key):
     url = f"http://openAPI.seoul.go.kr:8088/{api_key}/json/WPOSInformationTime/1/100/"
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url)
     with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
         return json.loads(resp.read().decode("utf-8"))
@@ -90,8 +88,6 @@ def save_to_supabase(records):
         },
     )
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     try:
         with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
             print(f"  ✅ Supabase 저장: {resp.status} ({len(records)}건)")
@@ -123,8 +119,6 @@ def report_health(status, message, count=0):
         },
     )
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     try:
         urllib.request.urlopen(req, timeout=10, context=ctx)
     except Exception:
