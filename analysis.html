@@ -180,16 +180,113 @@
 
     .overflow-x { overflow-x: auto; }
 
+    .btn-print {
+      background: #7873f5;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-print:hover { background: #6560e0; }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 0.3rem;
+    }
+    .status-dot.safe { background: #2ecc71; }
+    .status-dot.caution { background: #f39c12; }
+    .status-dot.warning { background: #e67e22; }
+    .status-dot.danger { background: #e74c3c; }
+
+    .risk-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #1a1a28;
+      margin-top: 0.3rem;
+    }
+    .risk-bar .fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 0.6rem;
+    }
+    .forecast-card {
+      background: #1a1a28;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 0.8rem;
+      text-align: center;
+      font-size: 0.78rem;
+    }
+    .forecast-card .fc-time { color: #aaa; font-size: 0.72rem; margin-bottom: 0.3rem; }
+    .forecast-card .fc-icon { font-size: 1.4rem; margin: 0.2rem 0; }
+    .forecast-card .fc-temp { font-size: 1rem; font-weight: 700; color: #e0e0e0; }
+    .forecast-card .fc-rain { color: #5dade2; font-size: 0.72rem; margin-top: 0.2rem; }
+
+    .resilience-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .r4-item {
+      background: #1a1a28;
+      border-radius: 8px;
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.72rem;
+    }
+    .r4-item .r4-val { font-size: 1rem; font-weight: 700; color: #7873f5; }
+    .r4-item .r4-label { color: #888; margin-top: 0.2rem; }
+
     @media (max-width: 600px) {
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
       .chart-container { height: 220px; }
+      .resilience-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media print {
+      body { background: #fff; color: #222; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header { background: #fff; border-bottom: 2px solid #333; }
+      header h1 span { color: #4a45c0; }
+      header a, .btn-print { display: none !important; }
+      .container { max-width: 100%; padding: 0; }
+      .section { background: #fff; border: 1px solid #ddd; page-break-inside: avoid; }
+      .stat-card { background: #f8f8f8; border: 1px solid #ddd; }
+      .stat-card .value { color: #333; }
+      .stat-card.alert .value { color: #e74c3c; }
+      .stat-card.good .value { color: #2ecc71; }
+      th { background: #f0f0f0; color: #333; }
+      td { color: #333; border-bottom: 1px solid #eee; }
+      tr:hover td { background: transparent; }
+      .chart-container { height: 200px; }
+      .species-chip { border: 1px solid #ccc; }
+      .footer { color: #999; }
     }
   </style>
 </head>
 <body>
   <header>
     <h1><span>RiverWatch</span> 분석 보고서</h1>
-    <a href="/dashboard">대시보드</a>
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+      <button class="btn-print" onclick="window.print()">🖨️ 인쇄/PDF</button>
+      <a href="/dashboard">대시보드</a>
+    </div>
   </header>
 
   <div class="container">
@@ -234,6 +331,36 @@
         <div class="overflow-x"><table id="alertTable"></table></div>
       </div>
 
+      <div class="section" id="waterLevelSection">
+        <h3><span class="icon">🌊</span> 수위 현황</h3>
+        <div class="chart-container"><canvas id="waterLevelChart"></canvas></div>
+        <div class="overflow-x"><table id="waterLevelTable"></table></div>
+      </div>
+
+      <div class="section" id="weatherSection">
+        <h3><span class="icon">🌤️</span> 기상 예보</h3>
+        <div id="weatherForecast" class="forecast-grid"></div>
+      </div>
+
+      <div class="section" id="aiPredSection">
+        <h3><span class="icon">🤖</span> AI 수위 예측 (LSTM)</h3>
+        <div class="chart-container"><canvas id="aiPredChart"></canvas></div>
+        <div class="overflow-x"><table id="aiPredTable"></table></div>
+      </div>
+
+      <div class="section" id="aiVerifySection">
+        <h3><span class="icon">🔍</span> AI 예측 검증</h3>
+        <div class="chart-container"><canvas id="aiVerifyChart"></canvas></div>
+        <div class="overflow-x" id="aiVerifyStats"></div>
+      </div>
+
+      <div class="section" id="ksafeSection">
+        <h3><span class="icon">🛡️</span> K-SAFE 홍수위험지수</h3>
+        <div class="chart-container"><canvas id="ksafeChart"></canvas></div>
+        <div class="overflow-x"><table id="ksafeTable"></table></div>
+        <div id="ksafeResilience"></div>
+      </div>
+
       <div class="footer" id="reportFooter"></div>
     </div>
   </div>
@@ -256,12 +383,15 @@
     }
 
     async function loadReport() {
-      const [ehi, species, readings, wq, alerts] = await Promise.all([
+      const [ehi, species, readings, wq, alerts, predictions, riskIndex, weather] = await Promise.all([
         sbGet('ehi_scores', 'select=*&order=calculated_at.desc&limit=100'),
         sbGet('species_observations', 'select=taxon_name,river,is_invasive,observed_at,source&order=observed_at.desc&limit=1000'),
-        sbGet('river_readings', 'select=station,river,water_level,level_ratio,status&order=id.desc&limit=500'),
+        sbGet('river_readings', 'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=measured_at.desc&limit=500'),
         sbGet('water_quality', 'select=*&order=collected_at.desc&limit=500'),
         sbGet('invasive_alerts', 'select=*&order=created_at.desc&limit=50'),
+        sbGet('flood_predictions', 'select=*&order=predicted_at.desc&limit=200'),
+        sbGet('flood_risk_index', 'select=*&order=calculated_at.desc&limit=100'),
+        sbGet('weather_forecasts', 'select=*&order=forecast_date.desc,forecast_hour.asc&limit=200'),
       ]);
 
       const now = new Date();
@@ -284,6 +414,15 @@
       const allDO = wq.filter(r => r.dissolved_oxygen).map(r => parseFloat(r.dissolved_oxygen));
       const avgDO = allDO.length ? (allDO.reduce((a,b) => a+b,0) / allDO.length).toFixed(1) : 'N/A';
 
+      // K-SAFE avg composite score
+      const latestRisk = {};
+      riskIndex.forEach(r => { if (r.river && !latestRisk[r.river]) latestRisk[r.river] = r; });
+      const riskScores = Object.values(latestRisk).map(r => r.composite_score || 0);
+      const avgKsafe = riskScores.length ? (riskScores.reduce((a,b) => a+b, 0) / riskScores.length).toFixed(1) : 'N/A';
+
+      // AI prediction MAPE
+      const mapeResult = computeMAPE(predictions, readings);
+
       const grid = document.getElementById('summaryGrid');
       const stats = [
         { value: Object.keys(latestEhi).length, label: '모니터링 하천', cls: '' },
@@ -294,6 +433,8 @@
         { value: dangerCount, label: '위험 관측소', cls: dangerCount > 0 ? 'alert' : 'good' },
         { value: Object.keys(wqStations).length, label: '수질 관측소', cls: '' },
         { value: avgDO, label: '평균 DO (mg/L)', cls: '' },
+        { value: avgKsafe, label: 'K-SAFE 평균', cls: parseFloat(avgKsafe) >= 70 ? 'alert' : parseFloat(avgKsafe) >= 40 ? '' : 'good' },
+        { value: mapeResult.mape !== null ? mapeResult.mape.toFixed(1) + '%' : 'N/A', label: 'AI 예측 MAPE', cls: mapeResult.mape !== null && mapeResult.mape < 15 ? 'good' : 'alert' },
       ];
       grid.innerHTML = stats.map(s =>
         `<div class="stat-card ${s.cls}"><div class="value">${s.value}</div><div class="label">${s.label}</div></div>`
@@ -303,7 +444,12 @@
       renderWQ(wqStations);
       renderSpecies(species);
       renderAlerts(alerts);
-      renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO);
+      renderWaterLevel(readings);
+      renderWeather(weather);
+      renderAIPredictions(predictions);
+      renderAIVerification(predictions, readings, mapeResult);
+      renderKSAFE(latestRisk);
+      renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO, avgKsafe, mapeResult);
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('reportContent').style.display = 'block';
@@ -449,7 +595,309 @@
         </tr>`).join('') + '</tbody>';
     }
 
-    function renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO) {
+    function computeMAPE(predictions, readings) {
+      // Match predictions to actual readings by station and target_time
+      const readingMap = {};
+      readings.forEach(r => {
+        if (r.station && r.measured_at && r.level_ratio != null) {
+          const key = r.station + '|' + r.measured_at.slice(0, 13);
+          if (!readingMap[key]) readingMap[key] = r;
+        }
+      });
+
+      const pairs = [];
+      predictions.forEach(p => {
+        if (!p.target_time || p.predicted_ratio == null) return;
+        const key = p.station + '|' + p.target_time.slice(0, 13);
+        const actual = readingMap[key];
+        if (actual && actual.level_ratio != null && actual.level_ratio > 0) {
+          pairs.push({
+            station: p.station,
+            river: p.river,
+            predicted: p.predicted_ratio,
+            actual: actual.level_ratio,
+            ape: Math.abs(p.predicted_ratio - actual.level_ratio) / actual.level_ratio * 100
+          });
+        }
+      });
+
+      const mape = pairs.length ? pairs.reduce((s, p) => s + p.ape, 0) / pairs.length : null;
+      return { mape, pairs, count: pairs.length };
+    }
+
+    function renderWaterLevel(readings) {
+      // Latest reading per station
+      const latest = {};
+      readings.forEach(r => { if (r.station && !latest[r.station]) latest[r.station] = r; });
+      const stations = Object.values(latest).sort((a,b) => (b.level_ratio||0) - (a.level_ratio||0));
+
+      const statusKr = { safe: '안전', caution: '관심', warning: '주의', danger: '위험' };
+
+      const ctx = document.getElementById('waterLevelChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: stations.map(s => s.river || s.station),
+          datasets: [{
+            label: '수위비 (%)',
+            data: stations.map(s => ((s.level_ratio || 0) * 100).toFixed(1)),
+            backgroundColor: stations.map(s => {
+              const st = s.status;
+              if (st === 'danger') return '#e74c3c88';
+              if (st === 'warning') return '#e67e2288';
+              if (st === 'caution') return '#f39c1288';
+              return '#2ecc7188';
+            }),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#1a1a28' }, ticks: { color: '#888', callback: v => v + '%' } },
+            x: { grid: { display: false }, ticks: { color: '#ccc', maxRotation: 45 } },
+          }
+        }
+      });
+
+      const tbl = document.getElementById('waterLevelTable');
+      tbl.innerHTML = `<thead><tr><th>관측소</th><th>하천</th><th>구</th><th>수위(m)</th><th>제방고(m)</th><th>수위비</th><th>상태</th><th>측정시각</th></tr></thead><tbody>`
+        + stations.map(s => `<tr>
+          <td>${s.station||''}</td>
+          <td>${s.river||''}</td>
+          <td>${s.gu||''}</td>
+          <td>${s.water_level != null ? parseFloat(s.water_level).toFixed(2) : '-'}</td>
+          <td>${s.embankment_height != null ? parseFloat(s.embankment_height).toFixed(2) : '-'}</td>
+          <td>${s.level_ratio != null ? (s.level_ratio * 100).toFixed(1) + '%' : '-'}</td>
+          <td><span class="status-dot ${s.status||'safe'}"></span>${statusKr[s.status] || s.status || '-'}</td>
+          <td>${(s.measured_at||'').slice(0,16).replace('T',' ')}</td>
+        </tr>`).join('') + '</tbody>';
+    }
+
+    function renderWeather(weather) {
+      if (!weather.length) {
+        document.getElementById('weatherForecast').innerHTML = '<p style="color:#888;font-size:0.85rem;">기상 예보 데이터 없음</p>';
+        return;
+      }
+      // Group by river, show latest forecast date
+      const byRiver = {};
+      weather.forEach(w => {
+        if (!byRiver[w.river]) byRiver[w.river] = [];
+        byRiver[w.river].push(w);
+      });
+
+      const skyIcon = (code) => {
+        if (code === 1 || code === '맑음') return '☀️';
+        if (code === 3 || code === '구름많음') return '⛅';
+        if (code === 4 || code === '흐림') return '☁️';
+        return '🌤️';
+      };
+
+      let html = '';
+      Object.entries(byRiver).forEach(([river, forecasts]) => {
+        const sorted = forecasts.sort((a,b) => (a.forecast_hour||0) - (b.forecast_hour||0)).slice(0, 8);
+        html += `<div style="grid-column:1/-1;font-size:0.85rem;font-weight:600;color:#aaa;margin-top:0.5rem;">📍 ${river}</div>`;
+        html += sorted.map(f => `
+          <div class="forecast-card">
+            <div class="fc-time">${f.forecast_date ? f.forecast_date.slice(5,10) : ''} ${String(f.forecast_hour||0).padStart(2,'0')}시</div>
+            <div class="fc-icon">${skyIcon(f.sky_condition)}</div>
+            <div class="fc-temp">${f.temperature != null ? f.temperature + '°' : '-'}</div>
+            <div class="fc-rain">💧 ${f.rain_probability != null ? f.rain_probability + '%' : '-'} ${f.rain_amount ? f.rain_amount + 'mm' : ''}</div>
+          </div>
+        `).join('');
+      });
+      document.getElementById('weatherForecast').innerHTML = html;
+    }
+
+    function renderAIPredictions(predictions) {
+      if (!predictions.length) {
+        document.getElementById('aiPredTable').innerHTML = '<p style="color:#888;font-size:0.85rem;">AI 예측 데이터 없음</p>';
+        return;
+      }
+      // Latest prediction per station
+      const latest = {};
+      predictions.forEach(p => { if (p.station && !latest[p.station]) latest[p.station] = p; });
+      const stations = Object.values(latest).sort((a,b) => (b.predicted_ratio||0) - (a.predicted_ratio||0));
+
+      const statusKr = { safe: '안전', caution: '관심', warning: '주의', danger: '위험' };
+
+      const ctx = document.getElementById('aiPredChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: stations.map(s => s.river || s.station),
+          datasets: [{
+            label: '예측 수위비 (%)',
+            data: stations.map(s => ((s.predicted_ratio || 0) * 100).toFixed(1)),
+            backgroundColor: stations.map(s => {
+              const st = s.predicted_status;
+              if (st === 'danger') return '#e74c3c88';
+              if (st === 'warning') return '#e67e2288';
+              if (st === 'caution') return '#f39c1288';
+              return '#7873f588';
+            }),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#1a1a28' }, ticks: { color: '#888', callback: v => v + '%' } },
+            x: { grid: { display: false }, ticks: { color: '#ccc', maxRotation: 45 } },
+          }
+        }
+      });
+
+      const tbl = document.getElementById('aiPredTable');
+      tbl.innerHTML = `<thead><tr><th>관측소</th><th>하천</th><th>예측시간</th><th>예측수위비</th><th>예측상태</th><th>신뢰도</th><th>예측시점</th></tr></thead><tbody>`
+        + stations.map(p => `<tr>
+          <td>${p.station||''}</td>
+          <td>${p.river||''}</td>
+          <td>+${p.prediction_hour||'?'}h</td>
+          <td>${p.predicted_ratio != null ? (p.predicted_ratio * 100).toFixed(1) + '%' : '-'}</td>
+          <td><span class="status-dot ${p.predicted_status||'safe'}"></span>${statusKr[p.predicted_status] || p.predicted_status || '-'}</td>
+          <td>${p.confidence != null ? (p.confidence * 100).toFixed(0) + '%' : '-'}</td>
+          <td>${(p.predicted_at||'').slice(0,16).replace('T',' ')}</td>
+        </tr>`).join('') + '</tbody>';
+    }
+
+    function renderAIVerification(predictions, readings, mapeResult) {
+      const { pairs, mape, count } = mapeResult;
+
+      if (!count) {
+        document.getElementById('aiVerifyStats').innerHTML = '<p style="color:#888;font-size:0.85rem;">검증 가능한 예측-실측 쌍 없음</p>';
+        return;
+      }
+
+      // Chart: predicted vs actual scatter
+      const ctx = document.getElementById('aiVerifyChart').getContext('2d');
+      const maxVal = Math.max(...pairs.map(p => Math.max(p.predicted, p.actual))) * 100;
+      new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: '예측 vs 실측',
+            data: pairs.map(p => ({ x: p.actual * 100, y: p.predicted * 100 })),
+            backgroundColor: '#7873f5aa',
+            borderColor: '#7873f5',
+            pointRadius: 5,
+          }, {
+            label: '완벽한 예측선',
+            data: [{ x: 0, y: 0 }, { x: maxVal, y: maxVal }],
+            type: 'line',
+            borderColor: '#2ecc7166',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ccc' } } },
+          scales: {
+            x: { title: { display: true, text: '실측 수위비 (%)', color: '#888' }, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+            y: { title: { display: true, text: '예측 수위비 (%)', color: '#888' }, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+          }
+        }
+      });
+
+      const accuracy = mape < 10 ? '우수' : mape < 20 ? '양호' : mape < 30 ? '보통' : '개선필요';
+      const accCls = mape < 10 ? 'good' : mape < 20 ? '' : 'alert';
+      document.getElementById('aiVerifyStats').innerHTML = `
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.8rem;">
+          <div class="stat-card ${accCls}" style="flex:1;min-width:120px;">
+            <div class="value">${mape.toFixed(1)}%</div>
+            <div class="label">MAPE</div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:120px;">
+            <div class="value">${count}</div>
+            <div class="label">검증 쌍 수</div>
+          </div>
+          <div class="stat-card ${accCls}" style="flex:1;min-width:120px;">
+            <div class="value">${accuracy}</div>
+            <div class="label">정확도 등급</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderKSAFE(latestRisk) {
+      const rivers = Object.entries(latestRisk).sort((a,b) => (b[1].composite_score||0) - (a[1].composite_score||0));
+
+      if (!rivers.length) {
+        document.getElementById('ksafeTable').innerHTML = '<p style="color:#888;font-size:0.85rem;">K-SAFE 데이터 없음</p>';
+        return;
+      }
+
+      const riskColor = (score) => {
+        if (score >= 80) return '#e74c3c';
+        if (score >= 60) return '#e67e22';
+        if (score >= 40) return '#f39c12';
+        return '#2ecc71';
+      };
+
+      const ctx = document.getElementById('ksafeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rivers.map(([r]) => r),
+          datasets: [
+            { label: '수위', data: rivers.map(([,r]) => r.w1_water_level || 0), backgroundColor: '#3498db88', borderRadius: 4 },
+            { label: '기상', data: rivers.map(([,r]) => r.w2_weather || 0), backgroundColor: '#9b59b688', borderRadius: 4 },
+            { label: 'AI예측', data: rivers.map(([,r]) => r.w3_prediction || 0), backgroundColor: '#e67e2288', borderRadius: 4 },
+            { label: '이력', data: rivers.map(([,r]) => r.w4_history || 0), backgroundColor: '#1abc9c88', borderRadius: 4 },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ccc' } } },
+          scales: {
+            y: { beginAtZero: true, max: 100, grid: { color: '#1a1a28' }, ticks: { color: '#888' } },
+            x: { grid: { display: false }, ticks: { color: '#ccc', maxRotation: 45 } },
+          }
+        }
+      });
+
+      const gradeKr = { low: '낮음', moderate: '보통', high: '높음', very_high: '매우높음', critical: '심각' };
+      const tbl = document.getElementById('ksafeTable');
+      tbl.innerHTML = `<thead><tr><th>하천</th><th>종합점수</th><th>위험등급</th><th>수위</th><th>기상</th><th>AI예측</th><th>이력</th><th>교차검증</th><th>추세</th></tr></thead><tbody>`
+        + rivers.map(([r, d]) => `<tr>
+          <td>${r}</td>
+          <td><span style="color:${riskColor(d.composite_score)};font-weight:700;">${(d.composite_score||0).toFixed(1)}</span></td>
+          <td><span class="grade-badge" style="background:${riskColor(d.composite_score)}33;color:${riskColor(d.composite_score)}">${d.risk_grade ? gradeKr[d.risk_grade] || d.risk_grade : '-'}</span></td>
+          <td>${(d.w1_water_level||0).toFixed(0)}</td>
+          <td>${(d.w2_weather||0).toFixed(0)}</td>
+          <td>${(d.w3_prediction||0).toFixed(0)}</td>
+          <td>${(d.w4_history||0).toFixed(0)}</td>
+          <td>${d.cross_validation ? '✅' : '❌'}</td>
+          <td>${d.trend_direction || '-'}</td>
+        </tr>`).join('') + '</tbody>';
+
+      // 4R Resilience summary (average across all rivers)
+      const r4keys = ['resilience_robustness', 'resilience_redundancy', 'resilience_resourcefulness', 'resilience_rapidity'];
+      const r4labels = ['견고성', '중복성', '자원성', '신속성'];
+      const r4avgs = r4keys.map(k => {
+        const vals = rivers.map(([,d]) => d[k]).filter(v => v != null);
+        return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : 'N/A';
+      });
+
+      document.getElementById('ksafeResilience').innerHTML = `
+        <h4 style="font-size:0.85rem;color:#aaa;margin:1rem 0 0.5rem;">4R 회복탄력성 (전체 평균)</h4>
+        <div class="resilience-grid">
+          ${r4labels.map((label, i) => `
+            <div class="r4-item">
+              <div class="r4-val">${r4avgs[i]}</div>
+              <div class="r4-label">${label}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderRecommendations(avgEhi, invasiveCount, dangerCount, wqStations, allDO, avgKsafe, mapeResult) {
       const recs = [];
       const ehi = parseFloat(avgEhi);
 
@@ -463,6 +911,22 @@
       if (lowDO) recs.push({ p: 'urgent', text: '용존산소(DO) 5.0mg/L 미만 관측 — 수질 개선 조치 시급' });
 
       if (dangerCount >= 3) recs.push({ p: 'urgent', text: `위험 관측소 ${dangerCount}개소 — 하천 범람 대비 점검 시급` });
+
+      // K-SAFE recommendations
+      const ksafe = parseFloat(avgKsafe);
+      if (!isNaN(ksafe)) {
+        if (ksafe >= 70) recs.push({ p: 'urgent', text: `K-SAFE 평균 ${avgKsafe}점 — 홍수 위험 단계 격상, 긴급 대응 체계 가동 필요` });
+        else if (ksafe >= 40) recs.push({ p: 'warning', text: `K-SAFE 평균 ${avgKsafe}점 — 하천별 맞춤 모니터링 주기 단축 권고` });
+        else recs.push({ p: 'ok', text: `K-SAFE 평균 ${avgKsafe}점 — 홍수 위험도 안정, 정기 점검 유지` });
+      }
+
+      // AI prediction accuracy recommendations
+      if (mapeResult && mapeResult.mape !== null) {
+        const mape = mapeResult.mape;
+        if (mape > 30) recs.push({ p: 'urgent', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 모델 재학습 및 데이터 품질 점검 시급` });
+        else if (mape > 15) recs.push({ p: 'warning', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 모델 파라미터 튜닝 권고` });
+        else recs.push({ p: 'ok', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 예측 모델 정확도 양호` });
+      }
 
       if (!recs.length) recs.push({ p: 'ok', text: '전체적으로 양호한 상태, 정기 모니터링 유지 권고' });
 
