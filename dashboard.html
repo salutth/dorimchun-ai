@@ -424,17 +424,6 @@
       <div class="card-body"><div id="chart-container"><canvas id="chart"></canvas></div></div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        🧠 AI 수위 예측 (LSTM) — <span id="predRiverName">도림천</span>
-        <span class="time-label" id="predSummary"></span>
-      </div>
-      <div class="card-body">
-        <div style="height:320px;padding:0.5rem"><canvas id="predictionChart"></canvas></div>
-        <div id="predTable" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
-      </div>
-    </div>
-
     <div class="card full-width">
       <div class="card-header">
         📊 AI 예측 검증 — <span id="verifyRiverName">도림천</span>
@@ -695,6 +684,18 @@
           <div style="height:280px"><canvas id="riskBar"></canvas></div>
         </div>
         <div style="margin-top:1rem;overflow-x:auto" id="riskTable"></div>
+      </div>
+    </div>
+
+    <!-- AI 수위 예측 (LSTM) -->
+    <div class="card">
+      <div class="card-header">
+        🧠 AI 수위 예측 (LSTM) — <span id="predRiverName">도림천</span>
+        <span class="time-label" id="predSummary"></span>
+      </div>
+      <div class="card-body">
+        <div style="height:320px;padding:0.5rem"><canvas id="predictionChart"></canvas></div>
+        <div id="predTable" style="padding:0 1rem 1rem;font-size:0.8rem;color:#999"></div>
       </div>
     </div>
 
