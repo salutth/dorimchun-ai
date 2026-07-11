@@ -2131,14 +2131,17 @@
       document.body.style.overflow = 'hidden';
 
       try {
-        const [readings, species, ehiRows, wqRows, preds, riskRows, cwRows] = await Promise.all([
-          query('river_readings', `select=station,gu,water_level,embankment_height,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=30`),
-          query('species_observations', `select=taxon_name,common_name,korean_name,photo_url,taxon_id,observed_at,is_invasive,observer&river=eq.${encodeURIComponent(river)}&order=observed_at.desc&limit=30`),
-          query('ehi_scores', `select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&river=eq.${encodeURIComponent(river)}&order=calculated_at.desc&limit=1`),
+        const enc = encodeURIComponent(river);
+        const [readings, species, ehiRows, wqRows, preds, riskRows, cwRows, weatherRows, allReadings] = await Promise.all([
+          query('river_readings', `select=station,gu,water_level,embankment_height,level_ratio,status,measured_at&river=eq.${enc}&order=measured_at.desc&limit=30`),
+          query('species_observations', `select=taxon_name,common_name,korean_name,photo_url,taxon_id,observed_at,is_invasive,observer&river=eq.${enc}&order=observed_at.desc&limit=30`),
+          query('ehi_scores', `select=river,ehi_score,grade,biodiversity_score,water_stability_score,non_invasive_score,observation_freq_score,species_count,calculated_at&river=eq.${enc}&order=calculated_at.desc&limit=1`),
           query('water_quality', `select=station_name,ph,dissolved_oxygen,water_temp,total_nitrogen,total_phosphorus,do_grade,measured_at&order=measured_at.desc&limit=100`),
-          query('flood_predictions', `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,predicted_at,target_time&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=100`),
-          query('flood_risk_index', `select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,resilience_average,disaster_stage,calculated_at&river=eq.${encodeURIComponent(river)}&order=calculated_at.desc&limit=10`),
-          query('citizen_water_quality', `select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,water_color,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=10`),
+          query('flood_predictions', `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,predicted_at,target_time&river=eq.${enc}&order=predicted_at.desc&limit=500`),
+          query('flood_risk_index', `select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,cross_validation,resilience_robustness,resilience_redundancy,resilience_resourcefulness,resilience_rapidity,resilience_average,disaster_stage,trend_direction,data_sources,calculated_at&river=eq.${enc}&order=calculated_at.desc&limit=10`),
+          query('citizen_water_quality', `select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,water_color,measured_at&river=eq.${enc}&order=measured_at.desc&limit=10`),
+          query('weather_forecasts', `select=river,forecast_date,forecast_hour,rain_probability,rain_amount,temperature,humidity,sky_condition,collected_at&river=eq.${enc}&order=forecast_hour.asc&limit=24`),
+          query('river_readings', `select=station,level_ratio,status,measured_at&river=eq.${enc}&order=measured_at.desc&limit=500`),
         ]);
 
         const now = new Date();
@@ -2271,6 +2274,20 @@
           html += '</tbody></table>';
         }
 
+        // 5-2. 기상 예보
+        html += '<h2>🌤️ 기상 예보</h2>';
+        if (weatherRows.length) {
+          html += '<table><thead><tr><th>시간</th><th>강수확률(%)</th><th>강수량(mm)</th><th>기온(°C)</th><th>습도(%)</th><th>하늘</th></tr></thead><tbody>';
+          weatherRows.forEach(w => {
+            const prob = w.rain_probability || 0;
+            const badge = prob >= 60 ? 'rpt-danger' : prob >= 30 ? 'rpt-warning' : 'rpt-safe';
+            html += `<tr><td>${w.forecast_hour || '-'}시</td><td><span class="rpt-badge ${badge}">${prob}</span></td><td>${w.rain_amount || 0}</td><td>${w.temperature ?? '-'}</td><td>${w.humidity ?? '-'}</td><td>${esc(w.sky_condition || '-')}</td></tr>`;
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">기상 예보 데이터 없음</p>';
+        }
+
         // 6. AI 수위 예측
         html += '<h2>🧠 AI 수위 예측 (LSTM)</h2>';
         if (preds.length) {
@@ -2295,6 +2312,43 @@
           html += '<p style="color:#999">예측 데이터 없음</p>';
         }
 
+        // 6-1. AI 예측 검증
+        html += '<h2>🔍 AI 예측 검증</h2>';
+        const actualMap = {};
+        allReadings.forEach(a => {
+          const t = new Date(a.measured_at);
+          const key = `${a.station}_${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}T${String(t.getHours()).padStart(2,'0')}`;
+          if (!actualMap[key]) actualMap[key] = a;
+        });
+        const matched = [];
+        preds.forEach(p => {
+          const tt = new Date(p.target_time);
+          const key = `${p.station}_${tt.getFullYear()}-${String(tt.getMonth()+1).padStart(2,'0')}-${String(tt.getDate()).padStart(2,'0')}T${String(tt.getHours()).padStart(2,'0')}`;
+          const actual = actualMap[key];
+          if (actual) matched.push({ station: p.station, hour: p.prediction_hour, predicted: p.predicted_ratio, actual: actual.level_ratio, error: Math.abs(p.predicted_ratio - actual.level_ratio), pctError: actual.level_ratio > 0 ? Math.abs(p.predicted_ratio - actual.level_ratio) / actual.level_ratio * 100 : 0, predStatus: p.predicted_status, actualStatus: actual.status });
+        });
+        if (matched.length) {
+          const n = matched.length;
+          const mae = matched.reduce((s, m) => s + m.error, 0) / n;
+          const rmse = Math.sqrt(matched.reduce((s, m) => s + m.error * m.error, 0) / n);
+          const mape = matched.filter(m => m.actual > 0).length > 0 ? matched.filter(m => m.actual > 0).reduce((s, m) => s + m.pctError, 0) / matched.filter(m => m.actual > 0).length : 0;
+          const statusMatch = matched.filter(m => m.predStatus === m.actualStatus).length;
+          const acc = (statusMatch / n * 100);
+          let grade = '미흡', gradeColor = '#e74c3c';
+          if (mape < 10) { grade = '우수'; gradeColor = '#2ecc71'; }
+          else if (mape < 20) { grade = '양호'; gradeColor = '#f39c12'; }
+          else if (mape < 30) { grade = '보통'; gradeColor = '#e67e22'; }
+          html += `<div class="rpt-section-grid">
+            <div class="rpt-stat-box"><div class="val">${n}</div><div class="label">검증 건수</div></div>
+            <div class="rpt-stat-box"><div class="val">${mae.toFixed(2)}%p</div><div class="label">MAE (평균절대오차)</div></div>
+            <div class="rpt-stat-box"><div class="val">${rmse.toFixed(2)}%p</div><div class="label">RMSE</div></div>
+            <div class="rpt-stat-box"><div class="val" style="color:${gradeColor}">${mape.toFixed(1)}%</div><div class="label">MAPE</div></div>
+          </div>
+          <p>상태정확도: <strong>${acc.toFixed(1)}%</strong> · 모델 등급: <strong style="color:${gradeColor}">${grade}</strong></p>`;
+        } else {
+          html += '<p style="color:#999">예측-실측 매칭 데이터가 아직 부족합니다. 시간이 지나면 자동으로 검증됩니다.</p>';
+        }
+
         // 7. K-SAFE 홍수위험지수
         html += '<h2>🛡️ K-SAFE 홍수위험지수</h2>';
         const latestRisk = {};
@@ -2303,9 +2357,21 @@
         if (riskList.length) {
           const gradeLabelsR = { critical:'🔴 심각', high:'🟠 높음', moderate:'🟡 보통', low:'🟢 낮음', minimal:'⚪ 최소' };
           const stageLabelsR = { prevention:'예방', preparedness:'대비', response:'대응', recovery:'복구' };
-          html += '<table><thead><tr><th>관측소</th><th>종합지수</th><th>등급</th><th>단계</th><th>W1 수위</th><th>W2 기상</th><th>W3 AI</th><th>W4 이력</th><th>4R 평균</th></tr></thead><tbody>';
+          const critical = riskList.filter(r => r.risk_grade === 'critical').length;
+          const high = riskList.filter(r => r.risk_grade === 'high').length;
+          const moderate = riskList.filter(r => r.risk_grade === 'moderate').length;
+          const avgScore = riskList.length ? (riskList.reduce((s, r) => s + r.composite_score, 0) / riskList.length).toFixed(1) : '-';
+          const avg4R = riskList.length ? (riskList.reduce((s, r) => s + (r.resilience_average||0), 0) / riskList.length).toFixed(0) : '-';
+          html += `<div class="rpt-section-grid">
+            <div class="rpt-stat-box"><div class="val">${avgScore}</div><div class="label">평균 위험지수</div></div>
+            <div class="rpt-stat-box"><div class="val" style="color:#e74c3c">${critical}</div><div class="label">심각 Critical</div></div>
+            <div class="rpt-stat-box"><div class="val" style="color:#f39c12">${moderate + high}</div><div class="label">주의 이상</div></div>
+            <div class="rpt-stat-box"><div class="val">${avg4R}</div><div class="label">평균 4R 회복탄력성</div></div>
+          </div>`;
+          html += '<table><thead><tr><th>관측소</th><th>지수</th><th>등급</th><th>단계</th><th>추세</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>검증</th><th>견고</th><th>중복</th><th>동원</th><th>신속</th><th>4R</th></tr></thead><tbody>';
           riskList.forEach(r => {
-            html += `<tr><td>${esc(r.station)}</td><td><strong>${r.composite_score}</strong></td><td>${gradeLabelsR[r.risk_grade]||r.risk_grade}</td><td>${stageLabelsR[r.disaster_stage]||r.disaster_stage}</td><td>${(r.w1_water_level||0).toFixed(0)}</td><td>${(r.w2_weather||0).toFixed(0)}</td><td>${(r.w3_prediction||0).toFixed(0)}</td><td>${(r.w4_history||0).toFixed(0)}</td><td>${(r.resilience_average||0).toFixed(0)}</td></tr>`;
+            const trendIcon = r.trend_direction === 'rising' ? '📈' : r.trend_direction === 'falling' ? '📉' : '➡️';
+            html += `<tr><td>${esc(r.station)}</td><td><strong>${r.composite_score}</strong></td><td>${gradeLabelsR[r.risk_grade]||r.risk_grade}</td><td>${stageLabelsR[r.disaster_stage]||r.disaster_stage}</td><td>${trendIcon}</td><td>${(r.w1_water_level||0).toFixed(0)}</td><td>${(r.w2_weather||0).toFixed(0)}</td><td>${(r.w3_prediction||0).toFixed(0)}</td><td>${(r.w4_history||0).toFixed(0)}</td><td>${(r.cross_validation||0).toFixed(2)}</td><td>${(r.resilience_robustness||0).toFixed(0)}</td><td>${(r.resilience_redundancy||0).toFixed(0)}</td><td>${(r.resilience_resourcefulness||0).toFixed(0)}</td><td>${(r.resilience_rapidity||0).toFixed(0)}</td><td>${(r.resilience_average||0).toFixed(0)}</td></tr>`;
           });
           html += '</tbody></table>';
         } else {
