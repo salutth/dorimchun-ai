@@ -614,6 +614,7 @@
           <div style="display:flex;gap:0.5rem">
             <button onclick="evaluateCitizen()" style="flex:1;background:linear-gradient(135deg,#7873f5,#6560e0);color:#fff;border:none;border-radius:10px;padding:0.7rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">평가하기</button>
             <button onclick="submitCitizen()" id="cwSubmitBtn" style="flex:1;background:#1a1a28;color:#7873f5;border:1px solid #7873f5;border-radius:10px;padding:0.7rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;display:none">저장하기</button>
+            <button onclick="printCitizenReport()" style="flex:1;background:#1a1a28;color:#1D9E75;border:1px solid #1D9E75;border-radius:10px;padding:0.7rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">🖨️ 보고서</button>
           </div>
           <div id="cwHistory" style="margin-top:1.2rem"></div>
         </div>
@@ -1982,6 +1983,99 @@
       document.getElementById('cwResult').innerHTML = html;
       document.getElementById('cwResult').style.display = 'block';
       document.getElementById('cwSubmitBtn').style.display = 'block';
+    }
+
+    function printCitizenReport() {
+      const river = document.getElementById('cwRiver').value || '미선택';
+      const observer = document.getElementById('cwObserver').value || '미입력';
+      const ph = document.getElementById('cwPh').value || '-';
+      const doVal = document.getElementById('cwDo').value || '-';
+      const temp = document.getElementById('cwTemp').value || '-';
+      const turb = document.getElementById('cwTurb').value || '-';
+      const ec = document.getElementById('cwEC').value || '-';
+      const bod = document.getElementById('cwBod').value || '-';
+      const cod = document.getElementById('cwCod').value || '-';
+      const ss = document.getElementById('cwSS').value || '-';
+      const color = document.getElementById('cwColor').value || '-';
+      const smell = document.getElementById('cwSmell').value || '-';
+      const flow = document.getElementById('cwFlow').value || '-';
+      const trash = document.getElementById('cwTrash').value || '-';
+      const weather = document.getElementById('cwWeather').value || '-';
+      const airTemp = document.getElementById('cwAirTemp').value || '-';
+      const humidity = document.getElementById('cwHumidity').value || '-';
+      const rain = document.getElementById('cwRain').value || '-';
+      const memo = document.getElementById('cwMemo').value || '';
+      const resultEl = document.getElementById('cwResult');
+      const evalResult = resultEl.style.display !== 'none' ? resultEl.innerText : '';
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'});
+      const timeStr = now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+
+      function grade(label, val) {
+        if (val === '-') return '<td style="color:#888">-</td>';
+        const v = parseFloat(val);
+        let g = '', c = '';
+        if (label === 'pH') { g = (v>=6.5&&v<=8.5)?'정상':'주의'; c = g==='정상'?'#4ade80':'#f59e0b'; }
+        else if (label === 'DO') { g = v>=5?'좋음':v>=2?'보통':'나쁨'; c = v>=5?'#4ade80':v>=2?'#f59e0b':'#ef4444'; }
+        else if (label === '탁도') { g = v<=10?'좋음':v<=25?'보통':'나쁨'; c = v<=10?'#4ade80':v<=25?'#f59e0b':'#ef4444'; }
+        else if (label === 'BOD') { g = v<=3?'좋음':v<=6?'보통':'나쁨'; c = v<=3?'#4ade80':v<=6?'#f59e0b':'#ef4444'; }
+        else if (label === 'COD') { g = v<=6?'좋음':v<=9?'보통':'나쁨'; c = v<=6?'#4ade80':v<=9?'#f59e0b':'#ef4444'; }
+        else if (label === 'SS') { g = v<=25?'좋음':v<=50?'보통':'나쁨'; c = v<=25?'#4ade80':v<=50?'#f59e0b':'#ef4444'; }
+        else return `<td>${val}</td>`;
+        return `<td>${val} <span style="color:${c};font-weight:700">(${g})</span></td>`;
+      }
+
+      const w = window.open('', '_blank');
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>수질 측정 보고서 - ${river}</title>
+      <style>
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display:none!important; } }
+        body { font-family: 'Pretendard','Malgun Gothic',sans-serif; max-width:700px; margin:2rem auto; padding:0 1.5rem; color:#222; line-height:1.6; }
+        h1 { font-size:1.4rem; border-bottom:3px solid #7873f5; padding-bottom:0.5rem; margin-bottom:0.3rem; }
+        .subtitle { color:#888; font-size:0.85rem; margin-bottom:1.5rem; }
+        h2 { font-size:1rem; color:#7873f5; margin:1.2rem 0 0.5rem; border-left:4px solid #7873f5; padding-left:0.5rem; }
+        table { width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:0.88rem; }
+        th, td { border:1px solid #ddd; padding:0.5rem 0.7rem; text-align:center; }
+        th { background:#f5f3ff; color:#333; font-weight:600; }
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.3rem 2rem; font-size:0.88rem; margin-bottom:1rem; }
+        .info-grid dt { color:#888; } .info-grid dd { margin:0; font-weight:500; }
+        .eval-box { background:#f5f3ff; border:1px solid #d8d5f7; border-radius:8px; padding:1rem; margin:1rem 0; white-space:pre-line; font-size:0.85rem; }
+        .memo-box { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:0.8rem; font-size:0.85rem; }
+        .footer { text-align:center; color:#aaa; font-size:0.75rem; margin-top:2rem; border-top:1px solid #eee; padding-top:0.8rem; }
+        .print-btn { background:#7873f5; color:#fff; border:none; border-radius:8px; padding:0.6rem 1.5rem; font-size:0.9rem; cursor:pointer; }
+      </style></head><body>
+      <div class="no-print" style="text-align:right;margin-bottom:1rem">
+        <button class="print-btn" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+      </div>
+      <h1>💧 시민 수질 측정 보고서</h1>
+      <div class="subtitle">RiverWatch 도림천 AI 하천 모니터링 플랫폼</div>
+      <h2>📋 측정 개요</h2>
+      <dl class="info-grid">
+        <dt>하천명</dt><dd>${river}</dd>
+        <dt>측정자</dt><dd>${observer}</dd>
+        <dt>측정일시</dt><dd>${dateStr} ${timeStr}</dd>
+        <dt>날씨</dt><dd>${weather}</dd>
+        <dt>기온</dt><dd>${airTemp !== '-' ? airTemp + '°C' : '-'}</dd>
+        <dt>습도</dt><dd>${humidity !== '-' ? humidity + '%' : '-'}</dd>
+        <dt>최근강수</dt><dd>${rain}</dd>
+      </dl>
+      <h2>🔬 수질 측정값</h2>
+      <table>
+        <tr><th>항목</th><th>측정값</th><th>항목</th><th>측정값</th></tr>
+        <tr><td>pH</td>${grade('pH',ph)}<td>DO (mg/L)</td>${grade('DO',doVal)}</tr>
+        <tr><td>수온 (°C)</td><td>${temp}</td><td>탁도 (NTU)</td>${grade('탁도',turb)}</tr>
+        <tr><td>전기전도도 (µS/cm)</td><td>${ec}</td><td>BOD (mg/L)</td>${grade('BOD',bod)}</tr>
+        <tr><td>COD (mg/L)</td>${grade('COD',cod)}<td>SS (mg/L)</td>${grade('SS',ss)}</tr>
+      </table>
+      <h2>👁️ 현장 관찰</h2>
+      <table>
+        <tr><th>수색 (물 색깔)</th><th>냄새</th><th>유속</th><th>쓰레기/부유물</th></tr>
+        <tr><td>${color}</td><td>${smell}</td><td>${flow}</td><td>${trash}</td></tr>
+      </table>
+      ${evalResult ? '<h2>📊 평가 결과</h2><div class="eval-box">' + evalResult + '</div>' : ''}
+      ${memo ? '<h2>📝 메모</h2><div class="memo-box">' + memo + '</div>' : ''}
+      <div class="footer">© 2026 RiverWatch · 살루트 · AI 활동가 1기 · 사교원<br>dorimchun-ai.pages.dev</div>
+      </body></html>`);
+      w.document.close();
     }
 
     async function submitCitizen() {
