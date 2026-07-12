@@ -141,6 +141,8 @@
       padding: 0.5rem 0.8rem;
       border-top: 1px solid #1a1a28;
     }
+    #riskTable tr[onclick]:hover { background: #7873f533 !important; }
+    #riskTable tr[onclick] { transition: background 0.15s; }
     .table-scroll {
       max-height: 380px;
       overflow-y: auto;
@@ -1036,21 +1038,54 @@
 
     // --- K-SAFE FLOOD RISK INDEX ---
     let riskRadarChart = null, riskBarChart = null;
+    let riskStations = [];
+    const gradeColors = { critical:'#e74c3c', high:'#e67e22', moderate:'#f1c40f', low:'#2ecc71', minimal:'#95a5a6' };
+
+    function selectRiskStation(idx) {
+      const s = riskStations[idx];
+      if (!s) return;
+
+      if (riskRadarChart) riskRadarChart.destroy();
+      riskRadarChart = new Chart(document.getElementById('riskRadar'), {
+        type: 'radar',
+        data: {
+          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력', 'R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
+          datasets: [{
+            label: `${s.station} (${s.river})`,
+            data: [s.w1_water_level, s.w2_weather, s.w3_prediction, s.w4_history,
+                   s.resilience_robustness, s.resilience_redundancy, s.resilience_resourcefulness, s.resilience_rapidity],
+            backgroundColor: (gradeColors[s.risk_grade]||'#7873f5') + '22',
+            borderColor: gradeColors[s.risk_grade]||'#7873f5',
+            pointBackgroundColor: gradeColors[s.risk_grade]||'#7873f5',
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 10 } } } },
+          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } } }
+        }
+      });
+
+      document.querySelectorAll('#riskTable tbody tr').forEach((row, i) => {
+        row.style.background = i === idx ? '#7873f522' : '';
+      });
+    }
+
     async function loadRiskIndex() {
       const rows = await query('flood_risk_index',
         'select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,cross_validation,disaster_stage,trend_direction,resilience_robustness,resilience_redundancy,resilience_resourcefulness,resilience_rapidity,resilience_average,data_sources,calculated_at&order=calculated_at.desc&limit=50');
 
       const latest = {};
       rows.forEach(r => { if (!latest[r.station]) latest[r.station] = r; });
-      const stations = Object.values(latest).sort((a,b) => (b.composite_score||0) - (a.composite_score||0));
+      riskStations = Object.values(latest).sort((a,b) => (b.composite_score||0) - (a.composite_score||0));
 
-      if (!stations.length) {
+      if (!riskStations.length) {
         document.getElementById('riskTable').innerHTML = '<div style="text-align:center;color:#555;font-size:0.8rem;padding:1rem">위험지수 데이터 없음</div>';
         return;
       }
 
       let critical=0, high=0, moderate=0, low=0, minimal=0;
-      stations.forEach(s => {
+      riskStations.forEach(s => {
         if (s.risk_grade==='critical') critical++;
         else if (s.risk_grade==='high') high++;
         else if (s.risk_grade==='moderate') moderate++;
@@ -1063,59 +1098,39 @@
       document.getElementById('riskLow').textContent = low;
       document.getElementById('riskMinimal').textContent = minimal;
 
-      if (stations[0] && stations[0].calculated_at) {
-        const t = new Date(stations[0].calculated_at);
+      if (riskStations[0] && riskStations[0].calculated_at) {
+        const t = new Date(riskStations[0].calculated_at);
         document.getElementById('riskTime').textContent = t.toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit' });
       }
 
-      const top = stations[0];
-      if (riskRadarChart) riskRadarChart.destroy();
-      riskRadarChart = new Chart(document.getElementById('riskRadar'), {
-        type: 'radar',
-        data: {
-          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력', 'R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
-          datasets: [{
-            label: `${top.station} (${top.river})`,
-            data: [top.w1_water_level, top.w2_weather, top.w3_prediction, top.w4_history,
-                   top.resilience_robustness, top.resilience_redundancy, top.resilience_resourcefulness, top.resilience_rapidity],
-            backgroundColor: '#7873f522',
-            borderColor: '#7873f5',
-            pointBackgroundColor: '#7873f5',
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 10 } } } },
-          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } } }
-        }
-      });
-
-      const gradeColors = { critical:'#e74c3c', high:'#e67e22', moderate:'#f1c40f', low:'#2ecc71', minimal:'#95a5a6' };
       if (riskBarChart) riskBarChart.destroy();
       riskBarChart = new Chart(document.getElementById('riskBar'), {
         type: 'bar',
         data: {
-          labels: stations.map(s => s.station),
+          labels: riskStations.map(s => s.station),
           datasets: [{
             label: '종합 위험지수',
-            data: stations.map(s => s.composite_score),
-            backgroundColor: stations.map(s => (gradeColors[s.risk_grade]||'#666') + '88'),
-            borderColor: stations.map(s => gradeColors[s.risk_grade]||'#666'),
+            data: riskStations.map(s => s.composite_score),
+            backgroundColor: riskStations.map(s => (gradeColors[s.risk_grade]||'#666') + '88'),
+            borderColor: riskStations.map(s => gradeColors[s.risk_grade]||'#666'),
             borderWidth: 1,
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false, indexAxis: 'y',
           scales: { x: { max: 100, ticks: { color: '#666' }, grid: { color: '#1a1a28' } }, y: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { display: false } } },
-          plugins: { legend: { display: false } }
+          plugins: { legend: { display: false } },
+          onClick(e, elements) {
+            if (elements.length) selectRiskStation(elements[0].index);
+          }
         }
       });
 
       const stageLabels = { prevention:'🟢 예방', preparedness:'🟡 대비', response:'🔴 대응', recovery:'🔵 복구' };
       const gradeLabels = { critical:'🔴 심각 Critical', high:'🟠 높음 High', moderate:'🟡 보통 Moderate', low:'🟢 낮음 Low', minimal:'⚪ 최소 Minimal' };
       let tbl = '<table><thead><tr><th>관측소</th><th>하천</th><th>지수</th><th>등급</th><th>단계</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>4R</th><th>검증</th></tr></thead><tbody>';
-      stations.forEach(s => {
-        tbl += `<tr>
+      riskStations.forEach((s, i) => {
+        tbl += `<tr style="cursor:pointer${i===0 ? ';background:#7873f522' : ''}" onclick="selectRiskStation(${i})">
           <td>${esc(s.station)}</td><td>${esc(s.river)}</td>
           <td style="font-weight:700;color:${gradeColors[s.risk_grade]||'#666'}">${s.composite_score}</td>
           <td>${gradeLabels[s.risk_grade]||s.risk_grade}</td>
@@ -1130,6 +1145,8 @@
       });
       tbl += '</tbody></table>';
       document.getElementById('riskTable').innerHTML = tbl;
+
+      selectRiskStation(0);
     }
 
     // --- AI PREDICTION ---
