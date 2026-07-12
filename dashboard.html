@@ -634,6 +634,19 @@
       <div class="card-body"><div style="height:320px;padding:0.5rem"><canvas id="compareChart"></canvas></div></div>
     </div>
 
+    <!-- 기상 예보 -->
+    <div class="card full-width">
+      <div class="card-header">
+        🌤️ 기상 예보 — <span id="wxRiverName">도림천</span>
+        <span class="time-label" id="wxTime"></span>
+      </div>
+      <div class="card-body" style="padding:1rem">
+        <div id="wxGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.6rem">
+          <div class="loading">로딩 중...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- K-SAFE 홍수위험지수 -->
     <div class="card full-width">
       <div class="card-header">
@@ -978,6 +991,47 @@
           },
         },
       });
+    }
+
+    // --- WEATHER FORECAST ---
+    async function loadWeatherForecast() {
+      const river = getSelectedRiver();
+      document.getElementById('wxRiverName').textContent = river;
+      const rows = await query('weather_forecasts',
+        `select=region,forecast_date,precipitation,temperature,humidity,weather_condition,collected_at&region=eq.${encodeURIComponent(river)}&order=collected_at.desc&limit=48`);
+
+      const grid = document.getElementById('wxGrid');
+      if (!rows.length) {
+        grid.innerHTML = '<div style="color:#888;font-size:0.85rem;padding:0.5rem">기상 예보 데이터 없음</div>';
+        return;
+      }
+
+      document.getElementById('wxTime').textContent = rows[0].collected_at ? rows[0].collected_at.slice(0,16).replace('T',' ') : '';
+
+      const parseWC = c => {
+        const hm = (c||'').match(/(\d{2}):\d{2}/);
+        const pm = (c||'').match(/p(\d+)%/);
+        const sky = (c||'').replace(/\s*\d{2}:\d{2}\s*p\d+%/, '').trim();
+        return { hour: hm ? parseInt(hm[1]) : 0, prob: pm ? parseInt(pm[1]) : 0, sky };
+      };
+      const skyIcon = s => {
+        if (s === '맑음') return '☀️';
+        if (s === '구름많음') return '⛅';
+        if (s === '흐림') return '☁️';
+        return '🌤️';
+      };
+
+      const sorted = rows.sort((a,b) => parseWC(a.weather_condition).hour - parseWC(b.weather_condition).hour);
+      grid.innerHTML = sorted.map(w => {
+        const p = parseWC(w.weather_condition);
+        const rainColor = p.prob >= 60 ? '#e74c3c' : p.prob >= 30 ? '#f39c12' : '#5dade2';
+        return `<div style="background:#1a1a28;border-radius:10px;padding:0.7rem;text-align:center;border:1px solid #2a2a3a">
+          <div style="font-size:0.72rem;color:#aaa">${w.forecast_date ? w.forecast_date.slice(5) : ''} ${String(p.hour).padStart(2,'0')}시</div>
+          <div style="font-size:1.4rem;margin:0.2rem 0">${skyIcon(p.sky)}</div>
+          <div style="font-size:1rem;font-weight:700">${w.temperature != null ? w.temperature + '°' : '-'}</div>
+          <div style="font-size:0.72rem;color:${rainColor};margin-top:0.2rem">💧 ${p.prob}%</div>
+        </div>`;
+      }).join('');
     }
 
     // --- K-SAFE FLOOD RISK INDEX ---
@@ -1750,6 +1804,7 @@
       loadPredictions();
       loadVerification();
       loadSpecies();
+      loadWeatherForecast();
     });
 
     // --- CITIZEN WATER QUALITY ---
@@ -2199,7 +2254,7 @@
     if (savedObs) document.getElementById('cwObserver').value = savedObs;
 
     // --- INIT ---
-    Promise.all([loadMap(), loadTable(), loadChart(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare(), loadRiskIndex()])
+    Promise.all([loadMap(), loadTable(), loadChart(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadHealth(), loadWaterQuality(), loadCompare(), loadWeatherForecast(), loadRiskIndex()])
       .then(() => {
         document.getElementById('lastUpdate').textContent =
           `업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
@@ -2207,7 +2262,7 @@
       .catch(err => console.error('Load error:', err));
 
     setInterval(() => {
-      Promise.all([loadMap(), loadTable(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality(), loadRiskIndex()]);
+      Promise.all([loadMap(), loadTable(), loadPredictions(), loadVerification(), loadSpecies(), loadInvasive(), loadEHI(), loadWaterQuality(), loadWeatherForecast(), loadRiskIndex()]);
     }, 5 * 60 * 1000);
 
     if ('serviceWorker' in navigator) {
