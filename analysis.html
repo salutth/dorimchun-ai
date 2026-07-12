@@ -396,7 +396,7 @@
         sbGet('river_readings', 'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=measured_at.desc&limit=500'),
         sbGet('water_quality', 'select=*&order=collected_at.desc&limit=500'),
         sbGet('invasive_alerts', 'select=*&order=created_at.desc&limit=50'),
-        sbGet('flood_predictions', 'select=*&order=predicted_at.desc&limit=200'),
+        sbGet('flood_predictions', `select=*&target_time=lte.${new Date().toISOString()}&order=predicted_at.desc&limit=200`),
         sbGet('flood_risk_index', 'select=*&order=calculated_at.desc&limit=100'),
         sbGet('weather_forecasts', 'select=*&order=forecast_date.desc,collected_at.desc&limit=200'),
       ]);

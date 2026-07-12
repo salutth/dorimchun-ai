@@ -1227,8 +1227,9 @@
       const river = getSelectedRiver();
       document.getElementById('verifyRiverName').textContent = river;
 
+      const nowISO = new Date().toISOString();
       const preds = await query('flood_predictions',
-        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&order=predicted_at.desc&limit=500`);
+        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&target_time=lte.${nowISO}&order=predicted_at.desc&limit=500`);
       const actuals = await query('river_readings',
         `select=station,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=500`);
 
