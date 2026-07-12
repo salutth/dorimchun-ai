@@ -398,7 +398,7 @@
         sbGet('invasive_alerts', 'select=*&order=created_at.desc&limit=50'),
         sbGet('flood_predictions', 'select=*&order=predicted_at.desc&limit=200'),
         sbGet('flood_risk_index', 'select=*&order=calculated_at.desc&limit=100'),
-        sbGet('weather_forecasts', 'select=*&order=forecast_date.desc,forecast_hour.asc&limit=200'),
+        sbGet('weather_forecasts', 'select=*&order=forecast_date.desc,collected_at.desc&limit=200'),
       ]);
 
       const now = new Date();
@@ -690,8 +690,9 @@
       // Group by river, show latest forecast date
       const byRiver = {};
       weather.forEach(w => {
-        if (!byRiver[w.river]) byRiver[w.river] = [];
-        byRiver[w.river].push(w);
+        const r = w.region || '';
+        if (!byRiver[r]) byRiver[r] = [];
+        byRiver[r].push(w);
       });
 
       const skyIcon = (code) => {
@@ -700,19 +701,27 @@
         if (code === 4 || code === '흐림') return '☁️';
         return '🌤️';
       };
+      const parseWeatherCond = (cond) => {
+        const hm = (cond||'').match(/(\d{2}):(\d{2})/);
+        const pm = (cond||'').match(/p(\d+)%/);
+        const sky = (cond||'').replace(/\s*\d{2}:\d{2}\s*p\d+%/, '').trim();
+        return { hour: hm ? parseInt(hm[1]) : 0, prob: pm ? parseInt(pm[1]) : 0, sky };
+      };
 
       let html = '';
       Object.entries(byRiver).forEach(([river, forecasts]) => {
-        const sorted = forecasts.sort((a,b) => (a.forecast_hour||0) - (b.forecast_hour||0)).slice(0, 8);
+        const sorted = forecasts.sort((a,b) => parseWeatherCond(a.weather_condition).hour - parseWeatherCond(b.weather_condition).hour).slice(0, 8);
         html += `<div style="grid-column:1/-1;font-size:0.85rem;font-weight:600;color:#aaa;margin-top:0.5rem;">📍 ${river}</div>`;
-        html += sorted.map(f => `
+        html += sorted.map(f => {
+          const p = parseWeatherCond(f.weather_condition);
+          return `
           <div class="forecast-card">
-            <div class="fc-time">${f.forecast_date ? f.forecast_date.slice(5,10) : ''} ${String(f.forecast_hour||0).padStart(2,'0')}시</div>
-            <div class="fc-icon">${skyIcon(f.sky_condition)}</div>
+            <div class="fc-time">${f.forecast_date ? f.forecast_date.slice(5,10) : ''} ${String(p.hour).padStart(2,'0')}시</div>
+            <div class="fc-icon">${skyIcon(p.sky)}</div>
             <div class="fc-temp">${f.temperature != null ? f.temperature + '°' : '-'}</div>
-            <div class="fc-rain">💧 ${f.rain_probability != null ? f.rain_probability + '%' : '-'} ${f.rain_amount ? f.rain_amount + 'mm' : ''}</div>
-          </div>
-        `).join('');
+            <div class="fc-rain">💧 ${p.prob}% ${f.precipitation ? f.precipitation + 'mm' : ''}</div>
+          </div>`;
+        }).join('');
       });
       document.getElementById('weatherForecast').innerHTML = html;
     }

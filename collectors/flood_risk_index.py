@@ -26,6 +26,7 @@ Bounded Autonomy: AI는 위험도를 제안만 하고, 최종 판단은 인간 �
 import json
 import math
 import os
+import re
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -300,8 +301,8 @@ def main():
     today = now.strftime("%Y-%m-%d")
     weather = sb_query(
         "weather_forecasts",
-        f"select=river,forecast_hour,rain_probability,rain_amount"
-        f"&forecast_date=eq.{today}&limit=500",
+        f"select=region,precipitation,weather_condition"
+        f"&forecast_date=eq.{today}&limit=1500",
     )
     print(f"  기상: {len(weather)}건")
 
@@ -328,10 +329,18 @@ def main():
 
     weather_by_river = {}
     for w in weather:
-        river = w.get("river", "")
+        river = w.get("region", "")
         if river not in weather_by_river:
             weather_by_river[river] = []
-        weather_by_river[river].append(w)
+        cond = w.get("weather_condition", "")
+        prob = 0
+        m = re.search(r'p(\d+)%', cond)
+        if m:
+            prob = int(m.group(1))
+        weather_by_river[river].append({
+            "rain_probability": prob,
+            "rain_amount": float(w.get("precipitation", 0)),
+        })
 
     pred_by_station = {}
     for p in predictions:

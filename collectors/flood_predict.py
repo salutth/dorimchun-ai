@@ -164,11 +164,23 @@ def main():
 
     today = datetime.now(KST).strftime("%Y-%m-%d")
     print(f"📥 기상 예보 조회 ({today})...")
-    weather = sb_query(
+    weather_raw = sb_query(
         "weather_forecasts",
-        f"select=river,forecast_date,forecast_hour,rain_probability,rain_amount"
-        f"&forecast_date=eq.{today}&limit=500"
+        f"select=region,forecast_date,precipitation,weather_condition"
+        f"&forecast_date=eq.{today}&limit=1500"
     )
+    import re as _re
+    weather = []
+    for w in weather_raw:
+        cond = w.get("weather_condition", "")
+        hm = _re.search(r'(\d{2}):\d{2}', cond)
+        pm = _re.search(r'p(\d+)%', cond)
+        weather.append({
+            "river": w.get("region", ""),
+            "forecast_hour": f"{int(hm.group(1)):02d}:00" if hm else "00:00",
+            "rain_probability": int(pm.group(1)) if pm else 0,
+            "rain_amount": str(w.get("precipitation", 0)),
+        })
     print(f"  → {len(weather)}건 수신")
 
     stations = {}

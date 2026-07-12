@@ -2236,7 +2236,7 @@
           query('flood_predictions', `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,predicted_at,target_time&river=eq.${enc}&order=predicted_at.desc&limit=500`),
           query('flood_risk_index', `select=station,river,composite_score,risk_grade,w1_water_level,w2_weather,w3_prediction,w4_history,cross_validation,resilience_robustness,resilience_redundancy,resilience_resourcefulness,resilience_rapidity,resilience_average,disaster_stage,trend_direction,data_sources,calculated_at&river=eq.${enc}&order=calculated_at.desc&limit=10`),
           query('citizen_water_quality', `select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,water_color,measured_at&river=eq.${enc}&order=measured_at.desc&limit=10`),
-          query('weather_forecasts', `select=river,forecast_date,forecast_hour,rain_probability,rain_amount,temperature,humidity,sky_condition,collected_at&river=eq.${enc}&order=forecast_hour.asc&limit=24`),
+          query('weather_forecasts', `select=region,forecast_date,precipitation,temperature,humidity,weather_condition,collected_at&region=eq.${enc}&order=collected_at.desc&limit=48`),
           query('river_readings', `select=station,level_ratio,status,measured_at&river=eq.${enc}&order=measured_at.desc&limit=500`),
         ]);
 
@@ -2375,9 +2375,13 @@
         if (weatherRows.length) {
           html += '<table><thead><tr><th>시간</th><th>강수확률(%)</th><th>강수량(mm)</th><th>기온(°C)</th><th>습도(%)</th><th>하늘</th></tr></thead><tbody>';
           weatherRows.forEach(w => {
-            const prob = w.rain_probability || 0;
+            const cond = w.weather_condition || '';
+            const m = cond.match(/p(\d+)%/);
+            const prob = m ? parseInt(m[1]) : 0;
+            const hour = cond.match(/(\d{2}:\d{2})/);
+            const sky = cond.replace(/\s*\d{2}:\d{2}\s*p\d+%/, '').trim() || '-';
             const badge = prob >= 60 ? 'rpt-danger' : prob >= 30 ? 'rpt-warning' : 'rpt-safe';
-            html += `<tr><td>${w.forecast_hour || '-'}시</td><td><span class="rpt-badge ${badge}">${prob}</span></td><td>${w.rain_amount || 0}</td><td>${w.temperature ?? '-'}</td><td>${w.humidity ?? '-'}</td><td>${esc(w.sky_condition || '-')}</td></tr>`;
+            html += `<tr><td>${hour ? hour[1] : '-'}</td><td><span class="rpt-badge ${badge}">${prob}</span></td><td>${w.precipitation || 0}</td><td>${w.temperature ?? '-'}</td><td>${w.humidity ?? '-'}</td><td>${esc(sky)}</td></tr>`;
           });
           html += '</tbody></table>';
         } else {

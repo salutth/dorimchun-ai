@@ -91,12 +91,12 @@ def parse_weather(data, river):
     for i in range(len(times)):
         t = times[i]
         date_part = t[:10]
-        hour_part = t[11:16]
+        hour_int = int(t[11:13])
         code = codes[i] if i < len(codes) else 0
         sky = WMO_CODES.get(code, str(code))
         precip = precips[i] if i < len(precips) else 0
-
         rain_prob = rain_probs[i] if i < len(rain_probs) else 0
+
         records.append({
             "region": river,
             "forecast_date": date_part,
@@ -104,10 +104,10 @@ def parse_weather(data, river):
             "precipitation": precip,
             "humidity": humids[i] if i < len(humids) else None,
             "wind_speed": winds[i] if i < len(winds) else None,
-            "weather_condition": f"{sky} {hour_part} p{int(rain_prob)}%",
+            "weather_condition": f"{sky} {hour_int:02d}:00 p{int(rain_prob)}%",
             "collected_at": datetime.now().isoformat(),
             "_rain_probability": rain_prob,
-            "_forecast_hour": hour_part,
+            "_forecast_hour": hour_int,
             "_sky_status": sky,
         })
 
@@ -207,7 +207,7 @@ def main():
         print(f"  {'-'*60}")
         shown = sorted(rain_alerts, key=lambda x: (-x["prob"], x["date"], x["hour"]))[:20]
         for a in shown:
-            print(f"  {a['river']:8s}  {a['date']:12s}  {a['hour']:6s}  {int(a['prob']):3d}%   {a['precip']:5.1f}mm  {a['sky']}")
+            print(f"  {a['river']:8s}  {a['date']:12s}  {a['hour']:02d}:00   {int(a['prob']):3d}%   {a['precip']:5.1f}mm  {a['sky']}")
         if len(rain_alerts) > 20:
             print(f"  ... 외 {len(rain_alerts) - 20}건")
     else:
