@@ -320,17 +320,25 @@
       const [assets, readings, weather] = await Promise.all([
         query('cultural_assets', 'select=name,grade,nearest_river,distance_km,latitude,longitude,risk_priority&order=risk_priority.desc&limit=500'),
         query('river_readings', 'select=station,river,gu,water_level,embankment_height,level_ratio,status,measured_at&order=measured_at.desc&limit=50'),
-        query('weather_forecasts', `select=river,forecast_hour,rain_probability,rain_amount,sky_status&forecast_date=eq.${todayStr}&order=forecast_hour.asc&limit=500`),
+        query('weather_forecasts', `select=region,precipitation,weather_condition&forecast_date=eq.${todayStr}&order=collected_at.desc&limit=1500`),
       ]);
 
+      const parseWC = (c) => {
+        const hm = (c||'').match(/(\d{2}):\d{2}/);
+        const pm = (c||'').match(/p(\d+)%/);
+        const sky = (c||'').replace(/\s*\d{2}:\d{2}\s*p\d+%/, '').trim();
+        return { hour: hm ? parseInt(hm[1]) : 0, prob: pm ? parseInt(pm[1]) : 0, sky };
+      };
       const weatherByRiver = {};
       let globalMaxRain = 0;
       for (const w of weather) {
-        const h = parseInt(w.forecast_hour);
-        if (h >= nowHour) {
-          if (!weatherByRiver[w.river]) weatherByRiver[w.river] = [];
-          weatherByRiver[w.river].push(w);
-          if (w.rain_probability > globalMaxRain) globalMaxRain = w.rain_probability;
+        const p = parseWC(w.weather_condition);
+        const river = w.region || '';
+        if (p.hour >= nowHour) {
+          if (!weatherByRiver[river]) weatherByRiver[river] = [];
+          const parsed = { river, forecast_hour: `${String(p.hour).padStart(2,'0')}:00`, rain_probability: p.prob, rain_amount: w.precipitation || 0, sky_status: p.sky };
+          weatherByRiver[river].push(parsed);
+          if (p.prob > globalMaxRain) globalMaxRain = p.prob;
         }
       }
 

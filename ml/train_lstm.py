@@ -72,13 +72,26 @@ def fetch_all_readings():
 
 
 def fetch_all_weather():
-    """기상 예보 데이터를 가져온다."""
+    """기상 예보 데이터를 가져온다 (구 스키마: region, precipitation, weather_condition)."""
+    import re as _re
     print("📥 기상 예보 조회 중...")
-    rows = sb_query(
+    raw = sb_query(
         "weather_forecasts",
-        "select=river,forecast_date,forecast_hour,rain_probability,rain_amount"
+        "select=region,forecast_date,precipitation,weather_condition"
         "&order=forecast_date.asc&limit=10000"
     )
+    rows = []
+    for w in raw:
+        cond = w.get("weather_condition", "")
+        hm = _re.search(r'(\d{2}):\d{2}', cond)
+        pm = _re.search(r'p(\d+)%', cond)
+        rows.append({
+            "river": w.get("region", ""),
+            "forecast_date": w.get("forecast_date", ""),
+            "forecast_hour": f"{int(hm.group(1)):02d}:00" if hm else "00:00",
+            "rain_probability": int(pm.group(1)) if pm else 0,
+            "rain_amount": str(w.get("precipitation", 0)),
+        })
     print(f"  → {len(rows)}건 수신")
     return rows
 
