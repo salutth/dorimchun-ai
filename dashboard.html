@@ -1283,9 +1283,9 @@
 
       const nowISO = new Date().toISOString();
       const preds = await query('flood_predictions',
-        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&target_time=lte.${nowISO}&order=predicted_at.desc&limit=500`);
+        `select=station,prediction_hour,predicted_ratio,predicted_status,confidence,target_time,predicted_at&river=eq.${encodeURIComponent(river)}&target_time=lte.${nowISO}&order=target_time.desc&limit=2000`);
       const actuals = await query('river_readings',
-        `select=station,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=500`);
+        `select=station,level_ratio,status,measured_at&river=eq.${encodeURIComponent(river)}&order=measured_at.desc&limit=3000`);
 
       if (preds.length === 0 || actuals.length === 0) {
         document.getElementById('verifySummary').textContent = '검증 데이터 부족';
