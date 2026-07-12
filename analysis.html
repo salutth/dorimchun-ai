@@ -541,6 +541,24 @@
         + '</tbody>';
     }
 
+    const SPECIES_KR = {
+      'Micropterus salmoides': '큰입배스', 'Lepomis macrochirus': '블루길',
+      'Trachemys scripta elegans': '붉은귀거북', 'Myocastor coypus': '뉴트리아',
+      'Ambrosia artemisiifolia': '돼지풀', 'Sicyos angulatus': '가시박',
+      'Rumex acetosella': '애기수영', 'Ageratina altissima': '서양등골나물',
+      'Solidago altissima': '양미역취', 'Humulus japonicus': '환삼덩굴',
+      'Chironomidae': '깔따구', 'Ephemeroptera': '하루살이',
+      'Aquarius paludum': '소금쟁이', 'Motacilla alba': '백할미새',
+      'Hirundo rustica': '제비', 'Alcedo atthis': '물총새',
+      'Tubifex tubifex': '실지렁이', 'Physa acuta': '왼돌이물달팽이',
+      'Egretta garzetta': '쇠백로', 'Motacilla cinerea': '노랑할미새',
+      'Paradoxornis webbianus': '붉은머리오목눈이', 'Anax parthenope': '큰파란색실잠자리',
+      'Ardea cinerea': '왜가리', 'Anas platyrhynchos': '청둥오리',
+      'Nycticorax nycticorax': '해오라기', 'Zosterops japonicus': '동박새',
+      'Passer montanus': '참새', 'Columba livia': '비둘기',
+    };
+    const krName = sci => SPECIES_KR[sci] ? `${SPECIES_KR[sci]} (${sci})` : sci;
+
     function renderSpecies(species) {
       const byRiver = {};
       const speciesCount = {};
@@ -582,7 +600,7 @@
       const topSp = Object.entries(speciesCount).sort((a,b) => b[1] - a[1]).slice(0, 15);
       document.getElementById('topSpecies').innerHTML = '<h4 style="font-size:0.85rem;margin:1rem 0 0.5rem;color:#aaa;">다빈도 관찰 종</h4>'
         + '<div class="top-species">' + topSp.map(([name, cnt]) =>
-        `<span class="species-chip">${name}<span class="count">${cnt}</span></span>`
+        `<span class="species-chip">${krName(name)}<span class="count">${cnt}</span></span>`
       ).join('') + '</div>';
     }
 
@@ -595,7 +613,7 @@
       const levelKr = { critical: '긴급', warning: '주의', info: '관찰' };
       tbl.innerHTML = `<thead><tr><th>종명</th><th>하천</th><th>경보</th><th>감지일</th></tr></thead><tbody>`
         + alerts.slice(0,10).map(a => `<tr>
-          <td>${a.species_name||''}</td>
+          <td>${krName(a.species_name||'')}</td>
           <td>${a.river||''}</td>
           <td>${levelKr[a.alert_level]||'?'}</td>
           <td>${(a.created_at||'').slice(0,10)}</td>
