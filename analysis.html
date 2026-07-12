@@ -603,11 +603,14 @@
     }
 
     function computeMAPE(predictions, readings) {
-      // Match predictions to actual readings by station and target_time
+      const dateKey = (iso) => {
+        const d = new Date(iso);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}`;
+      };
       const readingMap = {};
       readings.forEach(r => {
         if (r.station && r.measured_at && r.level_ratio != null) {
-          const key = r.station + '|' + r.measured_at.slice(0, 13);
+          const key = r.station + '|' + dateKey(r.measured_at);
           if (!readingMap[key]) readingMap[key] = r;
         }
       });
@@ -615,7 +618,7 @@
       const pairs = [];
       predictions.forEach(p => {
         if (!p.target_time || p.predicted_ratio == null) return;
-        const key = p.station + '|' + p.target_time.slice(0, 13);
+        const key = p.station + '|' + dateKey(p.target_time);
         const actual = readingMap[key];
         if (actual && actual.level_ratio != null && actual.level_ratio > 0) {
           pairs.push({
