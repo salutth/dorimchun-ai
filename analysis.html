@@ -647,7 +647,7 @@
           labels: stations.map(s => s.river || s.station),
           datasets: [{
             label: '수위비 (%)',
-            data: stations.map(s => ((s.level_ratio || 0) * 100).toFixed(1)),
+            data: stations.map(s => ((s.level_ratio || 0)).toFixed(1)),
             backgroundColor: stations.map(s => {
               const st = s.status;
               if (st === 'danger') return '#e74c3c88';
@@ -676,7 +676,7 @@
           <td>${s.gu||''}</td>
           <td>${s.water_level != null ? parseFloat(s.water_level).toFixed(2) : '-'}</td>
           <td>${s.embankment_height != null ? parseFloat(s.embankment_height).toFixed(2) : '-'}</td>
-          <td>${s.level_ratio != null ? (s.level_ratio * 100).toFixed(1) + '%' : '-'}</td>
+          <td>${s.level_ratio != null ? parseFloat(s.level_ratio).toFixed(1) + '%' : '-'}</td>
           <td><span class="status-dot ${s.status||'safe'}"></span>${statusKr[s.status] || s.status || '-'}</td>
           <td>${(s.measured_at||'').slice(0,16).replace('T',' ')}</td>
         </tr>`).join('') + '</tbody>';
@@ -745,7 +745,7 @@
           labels: stations.map(s => s.river || s.station),
           datasets: [{
             label: '예측 수위비 (%)',
-            data: stations.map(s => ((s.predicted_ratio || 0) * 100).toFixed(1)),
+            data: stations.map(s => ((s.predicted_ratio || 0)).toFixed(1)),
             backgroundColor: stations.map(s => {
               const st = s.predicted_status;
               if (st === 'danger') return '#e74c3c88';
@@ -772,7 +772,7 @@
           <td>${p.station||''}</td>
           <td>${p.river||''}</td>
           <td>+${p.prediction_hour||'?'}h</td>
-          <td>${p.predicted_ratio != null ? (p.predicted_ratio * 100).toFixed(1) + '%' : '-'}</td>
+          <td>${p.predicted_ratio != null ? parseFloat(p.predicted_ratio).toFixed(1) + '%' : '-'}</td>
           <td><span class="status-dot ${p.predicted_status||'safe'}"></span>${statusKr[p.predicted_status] || p.predicted_status || '-'}</td>
           <td>${p.confidence != null ? (p.confidence * 100).toFixed(0) + '%' : '-'}</td>
           <td>${(p.predicted_at||'').slice(0,16).replace('T',' ')}</td>
@@ -789,13 +789,13 @@
 
       // Chart: predicted vs actual scatter
       const ctx = document.getElementById('aiVerifyChart').getContext('2d');
-      const maxVal = Math.max(...pairs.map(p => Math.max(p.predicted, p.actual))) * 100;
+      const maxVal = Math.max(...pairs.map(p => Math.max(p.predicted, p.actual)));
       new Chart(ctx, {
         type: 'scatter',
         data: {
           datasets: [{
             label: '예측 vs 실측',
-            data: pairs.map(p => ({ x: p.actual * 100, y: p.predicted * 100 })),
+            data: pairs.map(p => ({ x: p.actual, y: p.predicted })),
             backgroundColor: '#7873f5aa',
             borderColor: '#7873f5',
             pointRadius: 5,
