@@ -231,8 +231,9 @@
       </div>
 
       <div style="margin-bottom:1rem">
-        <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
-          <select id="wqRiver" style="flex:1;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:10px;padding:0.6rem 0.8rem;font-size:0.85rem;font-family:inherit">
+        <!-- 기본 정보 -->
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap">
+          <select id="wqRiver" style="flex:1;min-width:120px;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
             <option value="">하천 선택</option>
             <option>도림천</option><option>안양천</option><option>중랑천</option><option>청계천</option>
             <option>탄천</option><option>홍제천</option><option>불광천</option><option>우이천</option>
@@ -241,46 +242,114 @@
             <option>여의천</option><option>봉원천</option><option>녹번천</option><option>세곡천</option>
             <option>내부천</option><option value="한강">한강(서울)</option>
           </select>
-          <input id="wqObserver" type="text" placeholder="측정자" style="flex:1;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:10px;padding:0.6rem 0.8rem;font-size:0.85rem;font-family:inherit">
+          <input id="wqObserver" type="text" placeholder="측정자 이름" style="flex:1;min-width:100px;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
         </div>
 
+        <!-- 사진 -->
+        <div style="margin-bottom:1rem">
+          <label style="font-size:0.72rem;color:#888;display:block;margin-bottom:0.3rem">📸 측정지 사진</label>
+          <div id="wqPhotoArea" onclick="document.getElementById('wqPhotoInput').click()" style="background:#12121a;border:2px dashed #2a2a3a;border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color 0.2s">
+            <div id="wqPhotoPlaceholder" style="text-align:center;color:#555;font-size:0.8rem"><div style="font-size:2rem;margin-bottom:0.3rem">📷</div>탭하여 촬영/선택</div>
+            <img id="wqPhotoPreview" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:8px">
+            <input type="file" id="wqPhotoInput" accept="image/*" capture="environment" style="display:none">
+          </div>
+        </div>
+
+        <!-- 수질 측정값 (8항목) -->
         <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">수질 측정값</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.8rem">
           <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">pH (0~14)</label>
-            <input id="wqPh" type="number" step="0.1" min="0" max="14" placeholder="7.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.95rem;font-family:inherit;text-align:center"></div>
+            <input id="wqPh" type="number" step="0.1" min="0" max="14" placeholder="7.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
           <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">DO 용존산소 (mg/L)</label>
-            <input id="wqDo" type="number" step="0.1" min="0" max="20" placeholder="8.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.95rem;font-family:inherit;text-align:center"></div>
+            <input id="wqDo" type="number" step="0.1" min="0" max="20" placeholder="8.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
           <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">수온 (°C)</label>
-            <input id="wqTemp" type="number" step="0.1" min="0" max="45" placeholder="22.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.95rem;font-family:inherit;text-align:center"></div>
+            <input id="wqTemp" type="number" step="0.1" min="0" max="45" placeholder="22.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
           <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">탁도 (NTU)</label>
-            <input id="wqTurb" type="number" step="0.1" min="0" placeholder="5.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.95rem;font-family:inherit;text-align:center"></div>
+            <input id="wqTurb" type="number" step="0.1" min="0" placeholder="5.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">전기전도도 (µS/cm)</label>
+            <input id="wqEC" type="number" step="1" min="0" placeholder="350" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">BOD (mg/L)</label>
+            <input id="wqBod" type="number" step="0.1" min="0" placeholder="2.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">COD (mg/L)</label>
+            <input id="wqCod" type="number" step="0.1" min="0" placeholder="4.0" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">SS 부유물 (mg/L)</label>
+            <input id="wqSS" type="number" step="0.1" min="0" placeholder="10" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
         </div>
 
+        <!-- 현장 관찰 -->
         <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">현장 관찰</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem">
-          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">수색</label>
-            <select id="wqColor" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.82rem;font-family:inherit">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem">
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">수색 (물 색깔)</label>
+            <select id="wqColor" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
               <option value="">선택</option>
               <option value="투명">투명 (맑음)</option>
-              <option value="연녹">연녹색 (녹조)</option>
+              <option value="연녹">연녹색 (약간 녹조)</option>
               <option value="녹색">녹색 (녹조 심각)</option>
-              <option value="황갈">황갈색 (토사)</option>
-              <option value="흑색">흑색 (오염)</option>
+              <option value="황갈">황갈색 (토사 유입)</option>
+              <option value="흑색">흑색 (오염 심각)</option>
+              <option value="백탁">백탁 (공사 등)</option>
             </select></div>
           <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">냄새</label>
-            <select id="wqSmell" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem;font-size:0.82rem;font-family:inherit">
+            <select id="wqSmell" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
               <option value="">선택</option>
               <option value="무취">무취</option>
               <option value="풀냄새">풀냄새/흙냄새</option>
               <option value="비린내">비린내 (녹조)</option>
               <option value="하수">하수 냄새</option>
+              <option value="기름">기름/화학 냄새</option>
               <option value="악취">강한 악취</option>
+            </select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem">
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">유속 (흐름)</label>
+            <select id="wqFlow" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+              <option value="">선택</option>
+              <option value="정체">정체 (거의 안 흐름)</option>
+              <option value="완류">완류 (느리게)</option>
+              <option value="보통">보통</option>
+              <option value="급류">급류 (빠르게)</option>
+            </select></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">쓰레기/부유물</label>
+            <select id="wqTrash" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+              <option value="">선택</option>
+              <option value="없음">없음 (깨끗)</option>
+              <option value="소량">소량</option>
+              <option value="보통">보통 (눈에 띔)</option>
+              <option value="심각">심각 (많음)</option>
+            </select></div>
+        </div>
+
+        <!-- 기상 환경 -->
+        <div style="font-size:0.78rem;color:#aaa;font-weight:600;margin-bottom:0.4rem">기상 환경</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.8rem">
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">날씨</label>
+            <select id="wqWeather" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+              <option value="">선택</option>
+              <option value="맑음">☀️ 맑음</option>
+              <option value="구름많음">⛅ 구름많음</option>
+              <option value="흐림">☁️ 흐림</option>
+              <option value="비">🌧️ 비</option>
+              <option value="소나기">⛈️ 소나기</option>
+              <option value="안개">🌫️ 안개</option>
+            </select></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">기온 (°C)</label>
+            <input id="wqAirTemp" type="number" step="0.1" placeholder="26" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">습도 (%)</label>
+            <input id="wqHumidity" type="number" step="1" min="0" max="100" placeholder="65" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.9rem;font-family:inherit;text-align:center"></div>
+          <div><label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">최근 강수</label>
+            <select id="wqRain" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.45rem;font-size:0.82rem;font-family:inherit">
+              <option value="">선택</option>
+              <option value="없음">없음</option>
+              <option value="12시간내">12시간 이내</option>
+              <option value="24시간내">24시간 이내</option>
+              <option value="48시간내">48시간 이내</option>
+              <option value="현재강수">현재 비/눈</option>
             </select></div>
         </div>
 
         <div style="margin-bottom:1rem">
-          <label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">메모</label>
-          <input id="wqMemo" type="text" placeholder="예: 상류 공사 중, 물고기 폐사 등" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
+          <label style="font-size:0.68rem;color:#666;display:block;margin-bottom:0.15rem">메모 (추가 관찰)</label>
+          <input id="wqMemo" type="text" placeholder="예: 상류 공사 중, 물고기 떼 관찰, 악취 심함" style="width:100%;background:#12121a;color:#e0e0e0;border:1px solid #2a2a3a;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;font-family:inherit">
         </div>
 
         <div id="wqResult" style="display:none;background:#1a1a28;border:1px solid #2a2a3a;border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;font-size:0.82rem"></div>
@@ -819,6 +888,21 @@
     }
 
     // --- 수질 모니터링 ---
+    let wqPhotoData = null;
+    document.getElementById('wqPhotoInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        wqPhotoData = ev.target.result;
+        const prev = document.getElementById('wqPhotoPreview');
+        prev.src = wqPhotoData; prev.style.display = 'block';
+        document.getElementById('wqPhotoPlaceholder').style.display = 'none';
+        document.getElementById('wqPhotoArea').style.borderColor = '#7873f5';
+      };
+      reader.readAsDataURL(file);
+    });
+
     function gradeDo(val) {
       if (val >= 7.5) return { grade: '매우좋음', color: '#2ecc71', emoji: '🟢' };
       if (val >= 5.0) return { grade: '좋음', color: '#27ae60', emoji: '🟢' };
@@ -831,7 +915,18 @@
       const doVal = parseFloat(document.getElementById('wqDo').value);
       const temp = parseFloat(document.getElementById('wqTemp').value);
       const turb = parseFloat(document.getElementById('wqTurb').value);
+      const ec = parseFloat(document.getElementById('wqEC').value);
+      const bod = parseFloat(document.getElementById('wqBod').value);
+      const cod = parseFloat(document.getElementById('wqCod').value);
+      const ss = parseFloat(document.getElementById('wqSS').value);
       const color = document.getElementById('wqColor').value;
+      const smell = document.getElementById('wqSmell').value;
+      const flow = document.getElementById('wqFlow').value;
+      const trash = document.getElementById('wqTrash').value;
+      const weather = document.getElementById('wqWeather').value;
+      const airTemp = parseFloat(document.getElementById('wqAirTemp').value);
+      const humidity = parseFloat(document.getElementById('wqHumidity').value);
+      const rain = document.getElementById('wqRain').value;
 
       if (isNaN(ph) && isNaN(doVal)) {
         alert('pH 또는 DO 중 하나 이상 입력해주세요.');
@@ -850,7 +945,18 @@
       }
       if (!isNaN(temp)) items.push(`<span style="color:#5dade2">수온 ${temp}°C</span>`);
       if (!isNaN(turb)) items.push(`<span style="color:${turb > 30 ? '#e74c3c' : '#2ecc71'}">탁도 ${turb} NTU</span>`);
+      if (!isNaN(ec)) items.push(`<span style="color:#aaa">전기전도도 ${ec} µS/cm</span>`);
+      if (!isNaN(bod)) items.push(`<span style="color:${bod > 5 ? '#e74c3c' : '#2ecc71'}">BOD ${bod} mg/L</span>`);
+      if (!isNaN(cod)) items.push(`<span style="color:${cod > 10 ? '#e74c3c' : '#2ecc71'}">COD ${cod} mg/L</span>`);
+      if (!isNaN(ss)) items.push(`<span style="color:${ss > 25 ? '#e74c3c' : '#2ecc71'}">SS ${ss} mg/L</span>`);
       if (color) items.push(`<span style="color:#aaa">수색: ${color}</span>`);
+      if (smell) items.push(`<span style="color:#aaa">냄새: ${smell}</span>`);
+      if (flow) items.push(`<span style="color:#aaa">유속: ${flow}</span>`);
+      if (trash) items.push(`<span style="color:${trash === '심각' ? '#e74c3c' : '#aaa'}">쓰레기: ${trash}</span>`);
+      if (weather) items.push(`<span style="color:#aaa">날씨: ${weather}</span>`);
+      if (!isNaN(airTemp)) items.push(`<span style="color:#aaa">기온 ${airTemp}°C</span>`);
+      if (!isNaN(humidity)) items.push(`<span style="color:#aaa">습도 ${humidity}%</span>`);
+      if (rain) items.push(`<span style="color:#aaa">강수: ${rain}</span>`);
 
       html += items.join('<br>');
       const el = document.getElementById('wqResult');
@@ -869,12 +975,17 @@
       const doVal = f('wqDo');
 
       const record = {
-        river, observer: observer,
+        river, observer,
         ph: f('wqPh'), dissolved_oxygen: doVal,
         water_temp: f('wqTemp'), turbidity: f('wqTurb'),
+        conductivity: f('wqEC'), bod: f('wqBod'), cod: f('wqCod'), ss: f('wqSS'),
         water_color: s('wqColor'), smell: s('wqSmell'),
+        flow_speed: s('wqFlow'), trash_level: s('wqTrash'),
+        weather: s('wqWeather'), air_temp: f('wqAirTemp'),
+        humidity: f('wqHumidity'), recent_rain: s('wqRain'),
         do_grade: doVal !== null ? gradeDo(doVal).grade : null,
         memo: s('wqMemo'),
+        photo_data: wqPhotoData,
         measured_at: new Date().toISOString(),
       };
 
@@ -894,9 +1005,13 @@
         setTimeout(() => {
           btn.textContent = '저장하기'; btn.disabled = false; btn.style.display = 'none';
           btn.style.background = '#1a1a28'; btn.style.color = '#7873f5'; btn.style.borderColor = '#7873f5';
-          ['wqPh','wqDo','wqTemp','wqTurb','wqMemo'].forEach(id => document.getElementById(id).value = '');
-          ['wqColor','wqSmell'].forEach(id => document.getElementById(id).selectedIndex = 0);
+          ['wqPh','wqDo','wqTemp','wqTurb','wqEC','wqBod','wqCod','wqSS','wqMemo','wqAirTemp','wqHumidity'].forEach(id => document.getElementById(id).value = '');
+          ['wqColor','wqSmell','wqFlow','wqTrash','wqWeather','wqRain'].forEach(id => document.getElementById(id).selectedIndex = 0);
           document.getElementById('wqResult').style.display = 'none';
+          wqPhotoData = null;
+          document.getElementById('wqPhotoPreview').style.display = 'none';
+          document.getElementById('wqPhotoPlaceholder').style.display = '';
+          document.getElementById('wqPhotoArea').style.borderColor = '#2a2a3a';
           loadWqHistory();
         }, 1200);
       } catch (e) {
@@ -907,7 +1022,7 @@
 
     async function loadWqHistory() {
       const rows = await query('citizen_water_quality',
-        'select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,do_grade,water_color,smell,memo,measured_at&order=measured_at.desc&limit=15');
+        'select=river,observer,ph,dissolved_oxygen,water_temp,turbidity,conductivity,bod,cod,ss,do_grade,water_color,smell,flow_speed,trash_level,weather,air_temp,humidity,recent_rain,memo,measured_at&order=measured_at.desc&limit=15');
       const el = document.getElementById('wqHistory');
       if (!rows.length) {
         el.innerHTML = '<div style="text-align:center;color:#555;font-size:0.82rem;padding:1rem">아직 측정 기록이 없습니다</div>';
@@ -921,13 +1036,24 @@
         if (r.dissolved_oxygen != null) parts.push(`DO ${r.dissolved_oxygen}`);
         if (r.water_temp != null) parts.push(`${r.water_temp}°C`);
         if (r.turbidity != null) parts.push(`탁도 ${r.turbidity}`);
+        if (r.conductivity != null) parts.push(`EC ${r.conductivity}`);
+        if (r.bod != null) parts.push(`BOD ${r.bod}`);
+        if (r.cod != null) parts.push(`COD ${r.cod}`);
+        if (r.ss != null) parts.push(`SS ${r.ss}`);
         const gc = r.do_grade === '매우좋음' || r.do_grade === '좋음' ? '#2ecc71' : r.do_grade === '보통' ? '#f39c12' : '#888';
+        const obs = [];
+        if (r.water_color) obs.push(`수색:${esc(r.water_color)}`);
+        if (r.smell) obs.push(`냄새:${esc(r.smell)}`);
+        if (r.flow_speed) obs.push(`유속:${esc(r.flow_speed)}`);
+        if (r.trash_level) obs.push(`쓰레기:${esc(r.trash_level)}`);
+        if (r.weather) obs.push(`날씨:${esc(r.weather)}`);
         html += `<div style="background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:0.4rem">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">
             <span style="font-weight:700;font-size:0.85rem">${esc(r.river||'')}</span>
             <span style="font-size:0.68rem;color:#555">${t}</span>
           </div>
-          <div style="font-size:0.78rem;color:#999">${parts.join(' · ')}${r.do_grade ? ` <span style="color:${gc};font-weight:600">${esc(r.do_grade)}</span>` : ''}${r.water_color ? ` · 수색:${esc(r.water_color)}` : ''}</div>
+          <div style="font-size:0.78rem;color:#999">${parts.join(' · ')}${r.do_grade ? ` <span style="color:${gc};font-weight:600">${esc(r.do_grade)}</span>` : ''}</div>
+          ${obs.length ? `<div style="font-size:0.72rem;color:#666;margin-top:0.15rem">${obs.join(' · ')}</div>` : ''}
           ${r.observer ? `<div style="font-size:0.65rem;color:#555;margin-top:0.15rem">by ${esc(r.observer)}</div>` : ''}
         </div>`;
       });
