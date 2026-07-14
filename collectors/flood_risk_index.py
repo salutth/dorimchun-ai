@@ -222,7 +222,8 @@ def get_trend_direction(readings):
 # ---------------------------------------------------------------------------
 # 4R Resilience 점수 계산
 # ---------------------------------------------------------------------------
-def compute_resilience(station_data, data_sources_count, data_age_minutes):
+def compute_resilience(station_data, data_sources_count, data_age_minutes,
+                       readings_6h=0, pred_hours_covered=0, pred_confidence=0.0):
     emb = float(station_data.get("embankment_height", 0) or 0)
     level = float(station_data.get("water_level", 0) or 0)
 
@@ -232,18 +233,29 @@ def compute_resilience(station_data, data_sources_count, data_age_minutes):
     else:
         robustness = 50
 
-    redundancy = min(100, data_sources_count * 25)
+    expected_readings_6h = 24
+    reading_coverage = min(1.0, readings_6h / expected_readings_6h) * 40
+    pred_coverage = min(1.0, pred_hours_covered / 12) * 30
+    source_score = min(30, data_sources_count * 10)
+    redundancy = min(100, reading_coverage + pred_coverage + source_score)
 
-    resourcefulness = 100 if data_sources_count >= 3 else data_sources_count * 33
+    conf_score = pred_confidence * 50
+    pred_exist = 25 if pred_hours_covered > 0 else 0
+    wx_exist = 25 if data_sources_count >= 2 else 0
+    resourcefulness = min(100, conf_score + pred_exist + wx_exist)
 
     if data_age_minutes <= 15:
-        rapidity = 100
+        freshness = 60
+    elif data_age_minutes <= 30:
+        freshness = 45
     elif data_age_minutes <= 60:
-        rapidity = 80
+        freshness = 30
     elif data_age_minutes <= 180:
-        rapidity = 50
+        freshness = 15
     else:
-        rapidity = max(10, 100 - data_age_minutes / 10)
+        freshness = 5
+    interval_consistency = min(40, readings_6h * 2)
+    rapidity = min(100, freshness + interval_consistency)
 
     return {
         "robustness": round(robustness, 1),
@@ -395,7 +407,24 @@ def main():
         else:
             age_minutes = 60
 
-        resilience = compute_resilience(latest, data_sources, age_minutes)
+        cutoff_6h = (now - timedelta(hours=6)).isoformat()
+        readings_6h = sum(1 for r in stn_readings
+                         if r.get("measured_at", "") >= cutoff_6h)
+
+        pred_hours = set()
+        avg_conf = 0.0
+        if stn_preds:
+            for p in stn_preds:
+                pred_hours.add(p.get("prediction_hour", 0))
+                avg_conf += float(p.get("confidence", 0))
+            avg_conf /= len(stn_preds)
+
+        resilience = compute_resilience(
+            latest, data_sources, age_minutes,
+            readings_6h=readings_6h,
+            pred_hours_covered=len(pred_hours),
+            pred_confidence=avg_conf,
+        )
 
         trend = get_trend_direction(stn_readings)
         stage = classify_stage(composite, trend)
