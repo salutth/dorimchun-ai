@@ -274,6 +274,8 @@
       return '안전';
     }
 
+    function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+
     function makeAssetIcon(grade, riskLevel) {
       const color = gradeColor(grade);
       const size = (grade === '국보' || grade === '보물') ? 12 : 9;
@@ -376,10 +378,10 @@
           : '<br>☀️ 강수 예보 없음';
         marker.bindPopup(`
           <div style="min-width:200px">
-            <div class="popup-title">💧 ${r.station}</div>
+            <div class="popup-title">💧 ${esc(r.station)}</div>
             <div><span class="river-popup-status ${status}">${statusLabel(status)}</span></div>
             <div class="popup-info" style="margin-top:6px">
-              하천: ${r.river || '-'}<br>
+              하천: ${esc(r.river) || '-'}<br>
               수위: ${r.water_level || '-'}cm / 제방: ${r.embankment_height || '-'}cm<br>
               수위비율: ${ratioStr}%${weatherLine}<br>
               측정: ${r.measured_at ? new Date(r.measured_at).toLocaleString('ko') : '-'}
@@ -433,10 +435,10 @@
         const riskLabel = riskScore >= 60 ? '🔴 위험' : riskScore >= 35 ? '🟡 주의' : '🟢 안전';
         marker.bindPopup(`
           <div style="min-width:220px">
-            <div class="popup-title">${a.name}</div>
-            <div><span class="popup-grade ${gradeClass(a.grade)}">${a.grade}</span></div>
+            <div class="popup-title">${esc(a.name)}</div>
+            <div><span class="popup-grade ${gradeClass(a.grade)}">${esc(a.grade)}</span></div>
             <div class="popup-info" style="margin-top:6px">
-              인접 하천: ${a.nearest_river || '-'} (${a.distance_km}km)<br>
+              인접 하천: ${esc(a.nearest_river) || '-'} (${a.distance_km}km)<br>
               인접관측소 상태: <span class="river-popup-status ${nearestStatus}">${statusLabel(nearestStatus)}</span><br>
               강수확률: ${maxRain}%<br>
               <b>복합 위험도: ${riskLabel} (${riskScore}점)</b>
@@ -453,7 +455,7 @@
         const alertPanel = document.getElementById('alertPanel');
         document.getElementById('alertTitle').textContent = `⚠️ ${dangerAssets.length}건 문화재 침수 위험 경보`;
         document.getElementById('alertBody').innerHTML = dangerAssets.slice(0, 5).map(d =>
-          `<b>${d.name}</b> (${d.grade}) — ${d.river} ${d.distance}km, 위험도 ${d.score}점`
+          `<b>${esc(d.name)}</b> (${esc(d.grade)}) — ${esc(d.river)} ${d.distance}km, 위험도 ${d.score}점`
         ).join('<br>');
         alertPanel.style.display = 'block';
       }

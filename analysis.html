@@ -389,6 +389,8 @@
       return 'grade-D';
     }
 
+    function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+
     async function loadReport() {
       const [ehi, species, readings, wq, alerts, predictions, riskIndex, weather] = await Promise.all([
         sbGet('ehi_scores', 'select=*&order=calculated_at.desc&limit=100'),
@@ -441,7 +443,7 @@
         { value: Object.keys(wqStations).length, label: '수질 관측소', cls: '' },
         { value: avgDO, label: '평균 DO (mg/L)', cls: '' },
         { value: avgKsafe, label: 'K-SAFE 평균', cls: parseFloat(avgKsafe) >= 70 ? 'alert' : parseFloat(avgKsafe) >= 40 ? '' : 'good' },
-        { value: mapeResult.mape !== null ? mapeResult.mape.toFixed(1) + '%' : 'N/A', label: 'AI 예측 MAPE', cls: mapeResult.mape !== null && mapeResult.mape < 15 ? 'good' : 'alert' },
+        { value: mapeResult.mape !== null ? mapeResult.mape.toFixed(1) + '%' : 'N/A', label: `AI 예측 MAPE (수집 ${mapeResult.collectionDays||0}일)`, cls: mapeResult.collectionDays < 30 ? '' : mapeResult.mape !== null && mapeResult.mape < 15 ? 'good' : 'alert' },
       ];
       grid.innerHTML = stats.map(s =>
         `<div class="stat-card ${s.cls}"><div class="value">${s.value}</div><div class="label">${s.label}</div></div>`
@@ -537,7 +539,7 @@
 
       const tbl = document.getElementById('wqTable');
       tbl.innerHTML = `<thead><tr><th>관측소</th><th>측정수</th><th>pH</th><th>DO</th><th>수온</th></tr></thead><tbody>`
-        + stations.map(s => `<tr><td>${s.name}</td><td>${s.count}</td><td>${s.ph}</td><td>${s.do}</td><td>${s.temp}</td></tr>`).join('')
+        + stations.map(s => `<tr><td>${esc(s.name)}</td><td>${s.count}</td><td>${s.ph}</td><td>${s.do}</td><td>${s.temp}</td></tr>`).join('')
         + '</tbody>';
     }
 
@@ -626,13 +628,21 @@
             river: p.river,
             predicted: p.predicted_ratio,
             actual: actual.level_ratio,
+            error: Math.abs(p.predicted_ratio - actual.level_ratio),
             ape: Math.abs(p.predicted_ratio - actual.level_ratio) / actual.level_ratio * 100
           });
         }
       });
 
       const mape = pairs.length ? pairs.reduce((s, p) => s + p.ape, 0) / pairs.length : null;
-      return { mape, pairs, count: pairs.length };
+      const mae = pairs.length ? pairs.reduce((s, p) => s + p.error, 0) / pairs.length : null;
+      const rmse = pairs.length ? Math.sqrt(pairs.reduce((s, p) => s + p.error * p.error, 0) / pairs.length) : null;
+
+      const measuredDates = readings.map(r => r.measured_at).filter(Boolean).map(d => new Date(d).getTime());
+      const collectionDays = measuredDates.length
+        ? Math.max(1, Math.ceil((Date.now() - Math.min(...measuredDates)) / 86400000))
+        : 0;
+      return { mape, mae, rmse, pairs, count: pairs.length, collectionDays };
     }
 
     function renderWaterLevel(readings) {
@@ -783,7 +793,7 @@
     }
 
     function renderAIVerification(predictions, readings, mapeResult) {
-      const { pairs, mape, count } = mapeResult;
+      const { pairs, mape, mae, rmse, count, collectionDays } = mapeResult;
 
       if (!count) {
         document.getElementById('aiVerifyStats').innerHTML = '<p style="color:#888;font-size:0.85rem;">검증 가능한 예측-실측 쌍 없음</p>';
@@ -825,8 +835,23 @@
 
       const accuracy = mape < 10 ? '우수' : mape < 20 ? '양호' : mape < 30 ? '보통' : '개선필요';
       const accCls = mape < 10 ? 'good' : mape < 20 ? '' : 'alert';
+
+      const enoughData = collectionDays >= 90;
+      const someData = collectionDays >= 30;
+      const periodCls = enoughData ? 'good' : someData ? '' : 'alert';
+      const periodLabel = enoughData ? '신뢰 가능' : someData ? '참고용 (장기 축적 권장)' : '데이터 축적 중 (참고용)';
+
       document.getElementById('aiVerifyStats').innerHTML = `
+        ${!enoughData ? `<p style="color:#f39c12;font-size:0.8rem;margin-bottom:0.6rem;">⚠️ 수집 ${collectionDays}일째 — 90일 이상 누적되기 전까지 아래 등급/오차는 ${someData ? '참고용' : '예비값'}으로만 보세요.</p>` : ''}
         <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.8rem;">
+          <div class="stat-card" style="flex:1;min-width:120px;">
+            <div class="value">${mae != null ? mae.toFixed(2) + '%p' : 'N/A'}</div>
+            <div class="label">MAE (평균절대오차)</div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:120px;">
+            <div class="value">${rmse != null ? rmse.toFixed(2) + '%p' : 'N/A'}</div>
+            <div class="label">RMSE</div>
+          </div>
           <div class="stat-card ${accCls}" style="flex:1;min-width:120px;">
             <div class="value">${mape.toFixed(1)}%</div>
             <div class="label">MAPE</div>
@@ -838,6 +863,10 @@
           <div class="stat-card ${accCls}" style="flex:1;min-width:120px;">
             <div class="value">${accuracy}</div>
             <div class="label">정확도 등급</div>
+          </div>
+          <div class="stat-card ${periodCls}" style="flex:1;min-width:120px;">
+            <div class="value">${collectionDays}일</div>
+            <div class="label">수집 기간 (${periodLabel})</div>
           </div>
         </div>
       `;
@@ -942,9 +971,12 @@
       // AI prediction accuracy recommendations
       if (mapeResult && mapeResult.mape !== null) {
         const mape = mapeResult.mape;
-        if (mape > 30) recs.push({ p: 'urgent', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 모델 재학습 및 데이터 품질 점검 시급` });
-        else if (mape > 15) recs.push({ p: 'warning', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 모델 파라미터 튜닝 권고` });
-        else recs.push({ p: 'ok', text: `AI 예측 MAPE ${mape.toFixed(1)}% — 예측 모델 정확도 양호` });
+        const days = mapeResult.collectionDays || 0;
+        if (days < 30) {
+          recs.push({ p: 'ok', text: `AI 예측 검증: 수집 ${days}일째 — 30일 미만이라 MAPE ${mape.toFixed(1)}%는 예비값입니다. 등급 판정은 데이터 축적 후 재확인 필요` });
+        } else if (mape > 30) recs.push({ p: 'urgent', text: `AI 예측 MAPE ${mape.toFixed(1)}% (수집 ${days}일) — 모델 재학습 및 데이터 품질 점검 시급` });
+        else if (mape > 15) recs.push({ p: 'warning', text: `AI 예측 MAPE ${mape.toFixed(1)}% (수집 ${days}일) — 모델 파라미터 튜닝 권고` });
+        else recs.push({ p: 'ok', text: `AI 예측 MAPE ${mape.toFixed(1)}% (수집 ${days}일) — 예측 모델 정확도 양호` });
       }
 
       if (!recs.length) recs.push({ p: 'ok', text: '전체적으로 양호한 상태, 정기 모니터링 유지 권고' });
