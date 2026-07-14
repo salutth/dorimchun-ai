@@ -1024,8 +1024,12 @@
         return '🌤️';
       };
 
-      const sorted = rows.sort((a,b) => parseWC(a.weather_condition).hour - parseWC(b.weather_condition).hour);
-      grid.innerHTML = sorted.map(w => {
+      const sorted = rows.sort((a,b) => {
+        if (a.forecast_date !== b.forecast_date) return a.forecast_date < b.forecast_date ? -1 : 1;
+        return parseWC(a.weather_condition).hour - parseWC(b.weather_condition).hour;
+      });
+      const filtered = sorted.filter(w => parseWC(w.weather_condition).hour % 3 === 0);
+      grid.innerHTML = filtered.map(w => {
         const p = parseWC(w.weather_condition);
         const rainColor = p.prob >= 60 ? '#e74c3c' : p.prob >= 30 ? '#f39c12' : '#5dade2';
         return `<div style="background:#1a1a28;border-radius:10px;padding:0.7rem;text-align:center;border:1px solid #2a2a3a">
