@@ -678,8 +678,9 @@
             <div style="font-size:1.6rem;font-weight:800;color:#95a5a6" id="riskMinimal">-</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
           <div style="height:280px"><canvas id="riskRadar"></canvas></div>
+          <div style="height:280px"><canvas id="riskRadarR"></canvas></div>
           <div style="height:280px"><canvas id="riskBar"></canvas></div>
         </div>
         <div style="margin-top:1rem;overflow-x:auto" id="riskTable"></div>
@@ -1037,32 +1038,52 @@
     }
 
     // --- K-SAFE FLOOD RISK INDEX ---
-    let riskRadarChart = null, riskBarChart = null;
+    let riskRadarChart = null, riskRadarRChart = null, riskBarChart = null;
     let riskStations = [];
     const gradeColors = { critical:'#e74c3c', high:'#e67e22', moderate:'#f1c40f', low:'#2ecc71', minimal:'#95a5a6' };
 
     function selectRiskStation(idx) {
       const s = riskStations[idx];
       if (!s) return;
+      const color = gradeColors[s.risk_grade]||'#7873f5';
 
       if (riskRadarChart) riskRadarChart.destroy();
       riskRadarChart = new Chart(document.getElementById('riskRadar'), {
         type: 'radar',
         data: {
-          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력', 'R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
+          labels: ['W1 수위', 'W2 기상', 'W3 AI예측', 'W4 이력'],
           datasets: [{
-            label: `${s.station} (${s.river})`,
-            data: [s.w1_water_level, s.w2_weather, s.w3_prediction, s.w4_history,
-                   s.resilience_robustness, s.resilience_redundancy, s.resilience_resourcefulness, s.resilience_rapidity],
-            backgroundColor: (gradeColors[s.risk_grade]||'#7873f5') + '22',
-            borderColor: gradeColors[s.risk_grade]||'#7873f5',
-            pointBackgroundColor: gradeColors[s.risk_grade]||'#7873f5',
+            label: `${s.station} 위험도`,
+            data: [s.w1_water_level, s.w2_weather, s.w3_prediction, s.w4_history],
+            backgroundColor: color + '22',
+            borderColor: color,
+            pointBackgroundColor: color,
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 10 } } } },
-          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } } }
+          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 11 } } } },
+          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } }, title: { display: true, text: '⚠️ 위험 요인 (W)', color: '#ccc', font: { size: 12 } } }
+        }
+      });
+
+      if (riskRadarRChart) riskRadarRChart.destroy();
+      riskRadarRChart = new Chart(document.getElementById('riskRadarR'), {
+        type: 'radar',
+        data: {
+          labels: ['R1 견고', 'R2 중복', 'R3 동원', 'R4 신속'],
+          datasets: [{
+            label: `${s.station} 회복력`,
+            data: [s.resilience_robustness, s.resilience_redundancy, s.resilience_resourcefulness, s.resilience_rapidity],
+            backgroundColor: '#2ecc7122',
+            borderColor: '#2ecc71',
+            pointBackgroundColor: '#2ecc71',
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, max: 100, ticks: { color: '#666', stepSize: 25 }, grid: { color: '#1a1a2855' }, pointLabels: { color: '#aaa', font: { size: 11 } } } },
+          plugins: { legend: { labels: { color: '#ccc', font: { size: 10 } } }, title: { display: true, text: '🛡️ 회복력 (4R)', color: '#ccc', font: { size: 12 } } }
         }
       });
 
