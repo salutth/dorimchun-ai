@@ -101,13 +101,8 @@ def save_to_supabase(records):
         print("  [Supabase] URL/KEY 없음 — 저장 건너뜀")
         return 0
 
-    url = f"{supabase_url}/rest/v1/species_observations?on_conflict=taxon_name,river,observed_at"
-    clean_records = []
-    for r in records:
-        rec = dict(r)
-        rec.pop("inaturalist_id", None)
-        clean_records.append(rec)
-    payload = json.dumps(clean_records).encode("utf-8")
+    url = f"{supabase_url}/rest/v1/species_observations?on_conflict=inaturalist_id"
+    payload = json.dumps(records).encode("utf-8")
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("apikey", supabase_key)
     req.add_header("Authorization", f"Bearer {supabase_key}")
