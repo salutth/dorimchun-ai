@@ -17,7 +17,7 @@ create table river_readings (
 
 alter table river_readings enable row level security;
 create policy "river_readings_read" on river_readings for select using (true);
-create policy "river_readings_insert" on river_readings for insert with check (true);
+create policy "river_readings_insert" on river_readings for insert with check ((current_setting('role') = 'service_role'));
 
 -- 2. 생물 관찰 데이터 (iNaturalist + 시민 제보)
 create table species_observations (
@@ -57,7 +57,7 @@ create table invasive_alerts (
 
 alter table invasive_alerts enable row level security;
 create policy "alerts_read" on invasive_alerts for select using (true);
-create policy "alerts_insert" on invasive_alerts for insert with check (true);
+create policy "alerts_insert" on invasive_alerts for insert with check ((current_setting('role') = 'service_role'));
 
 -- 4. EHI 생태건강성지수
 create table ehi_scores (
@@ -76,7 +76,7 @@ create table ehi_scores (
 
 alter table ehi_scores enable row level security;
 create policy "ehi_read" on ehi_scores for select using (true);
-create policy "ehi_insert" on ehi_scores for insert with check (true);
+create policy "ehi_insert" on ehi_scores for insert with check ((current_setting('role') = 'service_role'));
 
 -- 5. 인덱스
 create index idx_readings_river on river_readings(river);
@@ -117,7 +117,7 @@ create table if not exists collector_health (
 );
 alter table collector_health enable row level security;
 create policy "health_read" on collector_health for select using (true);
-create policy "health_insert" on collector_health for insert with check (true);
+create policy "health_insert" on collector_health for insert with check ((current_setting('role') = 'service_role'));
 
 -- 8. AI 침수 예측 (Phase 3-1 LSTM)
 create table if not exists flood_predictions (
@@ -138,7 +138,7 @@ create table if not exists flood_predictions (
 
 alter table flood_predictions enable row level security;
 create policy "predictions_read" on flood_predictions for select using (true);
-create policy "predictions_insert" on flood_predictions for insert with check (true);
+create policy "predictions_insert" on flood_predictions for insert with check ((current_setting('role') = 'service_role'));
 
 create index if not exists idx_predictions_station_target on flood_predictions(station, target_time);
 create index if not exists idx_predictions_river on flood_predictions(river);
@@ -172,7 +172,7 @@ create table if not exists flood_risk_index (
 
 alter table flood_risk_index enable row level security;
 create policy "risk_index_read" on flood_risk_index for select using (true);
-create policy "risk_index_insert" on flood_risk_index for insert with check (true);
+create policy "risk_index_insert" on flood_risk_index for insert with check ((current_setting('role') = 'service_role'));
 
 create index if not exists idx_risk_index_station on flood_risk_index(station);
 create index if not exists idx_risk_index_river on flood_risk_index(river);
@@ -197,7 +197,7 @@ create table if not exists flood_alerts (
 
 alter table flood_alerts enable row level security;
 create policy "flood_alerts_read" on flood_alerts for select using (true);
-create policy "flood_alerts_insert" on flood_alerts for insert with check (true);
+create policy "flood_alerts_insert" on flood_alerts for insert with check ((current_setting('role') = 'service_role'));
 
 alter table flood_alerts
   add constraint uq_flood_alerts_station_issued unique (station, issued_at);
@@ -219,4 +219,41 @@ create table if not exists weather_forecasts (
 
 alter table weather_forecasts enable row level security;
 create policy "weather_read" on weather_forecasts for select using (true);
-create policy "weather_insert" on weather_forecasts for insert with check (true);
+create policy "weather_insert" on weather_forecasts for insert with check ((current_setting('role') = 'service_role'));
+
+-- 12. 시민 수질 측정 (시민 입력 — anon INSERT 허용)
+create table if not exists citizen_water_quality (
+  id bigint generated always as identity primary key,
+  river text not null,
+  observer text default '시민과학자',
+  ph real check (ph >= 0 and ph <= 14),
+  dissolved_oxygen real check (dissolved_oxygen >= 0 and dissolved_oxygen <= 30),
+  water_temp real check (water_temp >= -5 and water_temp <= 50),
+  turbidity real check (turbidity >= 0 and turbidity <= 5000),
+  conductivity real check (conductivity >= 0),
+  bod real check (bod >= 0),
+  cod real check (cod >= 0),
+  ss real check (ss >= 0),
+  water_color text,
+  smell text,
+  flow_speed text,
+  trash_level text,
+  weather text,
+  air_temp real,
+  humidity real check (humidity >= 0 and humidity <= 100),
+  recent_rain text,
+  do_grade text,
+  memo text,
+  photo_data text,
+  latitude real,
+  longitude real,
+  measured_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+alter table citizen_water_quality enable row level security;
+create policy "cwq_read" on citizen_water_quality for select using (true);
+create policy "cwq_insert" on citizen_water_quality for insert with check (true);
+
+create index if not exists idx_cwq_river on citizen_water_quality(river);
+create index if not exists idx_cwq_measured on citizen_water_quality(measured_at desc);
