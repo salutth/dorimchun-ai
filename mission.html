@@ -985,7 +985,7 @@
         humidity: f('wqHumidity'), recent_rain: s('wqRain'),
         do_grade: doVal !== null ? gradeDo(doVal).grade : null,
         memo: s('wqMemo'),
-        photo_data: wqPhotoData,
+        photo_data: wqPhotoData ? wqPhotoData.substring(0, 200000) : null,
         measured_at: new Date().toISOString(),
       };
 
